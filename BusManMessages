@@ -1,0 +1,58 @@
+# This is an example messages file. Store it in the BusMan directory of the external
+# storage directory and BusMan will read and use it. Example:
+#   adb shell mkdir /sdcard/BusMan
+#   adb push BusManMessages /sdcard/BusMan
+#
+# There are 3 types of messages:
+#   Welcome messages, for arrivals while adding to the manifest
+#   format: w/timeRegexp/idRegexp/message/weight
+#
+#   Returning messages, for arrivals while dropping from the manifest
+#   format: r/timeRegexp/idRegexp/message/isLast/weight
+#
+#   "Go" messages, when the last entry has been removed from the manifest
+#   format: g/timeRegexp/message/weight
+#
+#  The first field identifies the type of message (w is welcome, etc.)
+#  timeRegexp is a regular expression to match against a time/date string of the form
+#          "Sun, Mar 23, 2014 14:07"
+#          ex: /.*Apr 01.*/ matches April first; empty matches all)
+#  idRegexp is a regular expression to match against a rider id, or empty to match all riders
+#  message is the string, which can contain:
+#           "%s" where the name is to be inserted
+#           "!locale(language)" where language is an ISO locale string, e.g., en_GB
+#               (without a !locale, the default locale language will be spoken)
+#  isLast is either "t", signifying that this matches a returning rider who is the last rider;
+#          "f" signifies someone who is NOT the last rider; and empty matches all
+#  weight is the selection weight. Among all matching messages, a message's weight divided by
+#          the sum of all matching messages' weights represents the probability that a given
+#          message will be selected. If weight is empty, it defaults to a value of 10.
+#
+#  NOTE: empty lines and lines beginning with "#" are ignored
+
+### General messages
+w/.*Mon.*//How was your weekend, %s?/10
+w///welcome, %s/10
+w///hi, %s/
+w///welcome aboard, %s/
+w///welcome back, %s/
+w///have a seat, %s/
+w///nice to see you, %s/
+w///glad to see you, %s/
+w///grab a seat, %s/
+w///have a seat, %s/
+w///Hey, %s, nice to see you!/
+
+r///welcome back, %s//
+r///heading home, %s//
+r///hope you had a great day, %s//
+r///get aboard, %s//
+r///homeward, %s//
+r///hi, %s//
+r///hey, %s is back!//
+
+g//Hooray! We're all aboard. Time to go!/
+g//It is go, go, go time!/
+g//Everyone is aboard. Let's boogie!/
+g//All aboard! It's time to head for home!/
+g/.*Fri.*/Yay! It's Friday! Let's go home!/1000

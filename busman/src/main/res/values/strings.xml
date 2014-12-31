@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (C) 2013 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<resources  xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name">BusMan</string>
+    <string name="manifest_activity_name">BusMan</string>
+    <string name="main_activity_name">BusMan: Configure Rider Tag</string>
+    <string name="write_a_new_tag">Initialize a Rider tag</string>
+    <string name="id_label">ID:</string>
+    <string name="name_label">Name:</string>
+    <string name="id_hint">email or phone#</string>
+    <string name="name_hint">Your Name</string>
+    <string name="configure_write_only">Make tag read-only</string>
+    <string name="msg_swipe_new_tag">Touch and hold tag against phone to write.</string>
+    <string name="msg_enter_both_fields">Please fill in your LDAP and name and try again.</string>
+    <string name="msg_writing_new_tag">Writing to new rider tag.</string>
+    <string name="msg_result_error_read_only">This tag is read-only. Try again with a fresh tag.</string>
+    <string name="msg_result_error_tag_too_small">Tag can\'t store a name that long. Shorten and try again.</string>
+    <string name="msg_result_success">Tag written successfully.</string>
+    <string name="msg_result_success_formatted">Tag written successfully!\nClose this app and scan tag.</string>
+    <string name="msg_result_error_cant_format_tag">Failed to format tag. Try again or get another tag.</string>
+    <string name="msg_result_error_not_ndef_tag">This tag doesn\'t support NDEF format. Try again with a compatible tag.</string>
+    <string name="msg_result_error_cant_write_tag">Unable to write tag. Try again or get a fresh tag.</string>
+    <string name="msg_result_cant_make_read_only">This tag cannot be make read-only. Un-check or try a different tag.</string>
+
+    <string name="item_settings">Settings</string>
+    <string name="item_load_messages">Reload messages</string>
+    <string name="item_manage_manifest">Manage manifest</string>
+    <string name="item_sort_by_boarding">Sort by boarding order</string>
+    <string name="item_sort_by_name">Sort by name</string>
+    <string name="item_clear_manifest">Clear manifest</string>
+    <string name="item_add_rider">Add a rider with no tag</string>
+    <string name="item_initialize_tag">Initialize rider tag</string>
+    <string name="item_about">About BusMan&#8230;</string>
+
+    <string name="add_rider_hint">rider name (id)</string>
+
+    <string name="add_button">Add to manifest</string>
+    <string name="drop_button">Drop from manifest</string>
+    <string name="add_mode">Adding to manifest&#8230;</string>
+    <string name="drop_mode">Dropping from manifest&#8230;</string>
+
+    <string name="manifest_action_label_added">Added:</string>
+    <string name="manifest_action_label_dupe_added">Already have </string>
+    <string name="manifest_action_label_dropped">Dropped:</string>
+    <string name="manifest_action_label_dupe_dropped">Didn\'t find </string>
+
+    <string name="about_this_app_title">About BusMan</string>
+
+    <!-- TODO: Drop the copyright if at all possible -->
+    <string name="about_this_app_message">BusMan version %s\n
+\n
+NOTE: BusMan is NOT a Google product\n
+\n
+Copyright &#169; 2013 The Android Open Source Project\n
+\n
+Licensed under the Apache License, Version 2.0 (the "License");\n
+you may not use this file except in compliance with the License.\n
+You may obtain a copy of the License at\n
+\n
+   http://www.apache.org/licenses/LICENSE-2.0\n
+\n
+Unless required by applicable law or agreed to in writing, software\n
+distributed under the License is distributed on an "AS IS" BASIS,\n
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n
+See the License for the specific language governing permissions and\n
+limitations under the License.</string>
+
+    <string name="empty_list_when_adding">Waiting for riders&#8230;</string>
+    <string name="empty_list_when_dropping">All are aboard: It\'s GO time!</string>
+    <string name="clear_confirm_title">Clear manifest?</string>
+    <string name="clear_confirm_message">Remove all riders from the manifest and start from scratch?</string>
+
+    <string name="drop_dialog_title">Drop from manifest?</string>
+    <string name="drop_dialog_message">Drop <xliff:g id="rider_name">%s</xliff:g> from the manifest?</string>
+
+    <string-array name="welcomes">
+        <item>welcome, <xliff:g>%s</xliff:g></item>
+        <item>hi, <xliff:g>%s</xliff:g></item>
+        <item>welcome aboard, <xliff:g>%s</xliff:g></item>
+        <item>welcome back, <xliff:g>%s</xliff:g></item>
+        <item>have a seat, <xliff:g>%s</xliff:g></item>
+        <item>nice to see you, <xliff:g>%s</xliff:g></item>
+        <item>glad to see you, <xliff:g>%s</xliff:g></item>
+        <item>grab a seat, <xliff:g>%s</xliff:g></item>
+        <item>Hey, <xliff:g>%s</xliff:g>, nice to see you!</item>
+        </string-array>
+
+    <string-array name="returns">
+        <item>welcome back, <xliff:g>%s</xliff:g></item>
+        <item>heading home, <xliff:g>%s</xliff:g></item>
+        <item>hope you had a great day, <xliff:g>%s</xliff:g></item>
+        <item>get aboard, <xliff:g>%s</xliff:g></item>
+        <item>homeward, <xliff:g>%s</xliff:g></item>
+        <item>hi, <xliff:g>%s</xliff:g></item>
+        <item>hey, <xliff:g>%s</xliff:g> is back!</item>
+        </string-array>
+
+    <string-array name="time_to_go">
+        <item>Hooray! We\'re all aboard. Time to go!</item>
+        <item>It is go, go, go time!</item>
+        <item>Everyone is aboard. Let\'s boogie!</item>
+        <item>All aboard! It\'s time to head for home!</item>
+    </string-array>
+
+    <string name="who_are_you">You are not on the list, <xliff:g>%s</xliff:g></string>
+    <string name="deja_vu">You are already on the list, <xliff:g>%s</xliff:g></string>
+</resources>

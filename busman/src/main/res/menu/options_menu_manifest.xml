@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (C) 2013 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/option_settings" android:title="@string/item_settings"></item>
+    <item android:id="@+id/option_load_messages" android:title="@string/item_load_messages"></item>
+    <item android:id="@+id/option_clear" android:title="@string/item_clear_manifest"></item>
+    <item android:id="@+id/option_sort" android:title="@string/item_sort_by_boarding"></item>
+    <item android:id="@+id/option_add_rider" android:title="@string/item_add_rider"></item>
+    <item android:id="@+id/option_initialize_tag" android:title="@string/item_initialize_tag"></item>
+    <item android:id="@+id/option_about_too" android:title="@string/item_about"></item>
+</menu>

@@ -1,0 +1,24 @@
+# Ignore all gen directories
+gen/
+
+# Ignore all bin directories
+bin/
+
+# Ignore any IDE output directories
+out/
+
+# Ignore IntelliJ configuration files
+#*.ipr
+*.iws
+
+# Ignore Android Studio files
+.idea/
+import-summary.txt
+.gradle
+build
+*.iml
+local.properties
+
+
+# Ignore any save files
+*~

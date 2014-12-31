@@ -1,0 +1,18 @@
+<resources>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+    <string name="pref_category_general">General Settings</string>
+
+    <string name="pref_enable_TTS">Use Text-to-Speech to announce riders</string>
+    <string name="pref_enable_TTS_summary">Greets riders by their first names, if checked.</string>
+
+    <string name="pref_category_messages">Message Settings</string>
+
+    <string name="pref_messages_url">Web address to load messages from (optional)</string>
+    <string name="pref_messages_url_default"></string>
+
+    <string name="pref_messages_poll_hours">number of hours to wait before reloading
+        messages</string>
+    <string name="pref_messages_poll_hours_default">4</string>
+</resources>

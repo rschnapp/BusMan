@@ -1,0 +1,19 @@
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 16
+    buildToolsVersion "20.0.0"
+
+    defaultConfig {
+        applicationId "net.bbuzz.busman"
+        minSdkVersion 14
+        targetSdkVersion 19
+    }
+
+    buildTypes {
+        release {
+            //runProguard true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
+        }
+    }
+}
