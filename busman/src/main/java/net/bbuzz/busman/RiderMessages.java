@@ -291,6 +291,7 @@ public class RiderMessages {
         }
     }
 
+    private static String sLatestWelcomeString;
     /**
      * @param rider - a rider id
      * @param timeString the current time
@@ -303,14 +304,16 @@ public class RiderMessages {
             final String idMatch = message.idMatch;
             final String timeRegexp = message.timeRegexp;
             if ((!idMatch.isEmpty() && !rider.matches(idMatch))
-                    || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))) {
+                    || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
+                    || (message.message.equals(sLatestWelcomeString))) {
                 continue;
             }
             totalWeight += message.weight;
             candidates.add(new CandidateMessage(message.message, totalWeight));
         }
 
-        return selectMessage(candidates, totalWeight);
+        sLatestWelcomeString =  selectMessage(candidates, totalWeight);
+        return sLatestWelcomeString;
     }
 
     /**
@@ -334,6 +337,7 @@ public class RiderMessages {
         return null;
     }
 
+    private static String sLatestReturnsString;
     /**
      * @param rider - a rider id
      * @param timeString - the current time
@@ -351,14 +355,16 @@ public class RiderMessages {
             final String riderIsLast = isLast ? "t" : "f";
             if ((!idRegexp.isEmpty() && !rider.matches(idRegexp))
                     || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
-                    || (!messageIsLast.isEmpty() && !riderIsLast.equals(messageIsLast))) {
+                    || (!messageIsLast.isEmpty() && !riderIsLast.equals(messageIsLast))
+                    || (message.message.equals(sLatestReturnsString))) {
                 continue;
             }
             totalWeight += message.weight;
             candidates.add(new CandidateMessage(message.message, totalWeight));
         }
 
-        return selectMessage(candidates, totalWeight);
+        sLatestReturnsString = selectMessage(candidates, totalWeight);
+        return sLatestReturnsString;
     }
 
     /**
