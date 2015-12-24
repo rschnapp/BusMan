@@ -62,6 +62,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -76,6 +77,8 @@ public class ManifestActivity extends ListActivity {
     private static final int COLOR_ADDING = 0xff006000;
     private static final int COLOR_DROPPING = 0xff600000;
     private static final int COLOR_BLACK = 0xff000000;
+
+    private static final int MAX_MESSAGE_TRIES = 3;
 
     private static final String ACTION_FORWARD = "net.bbuzz.busman.action.FORWARD";
     private static final String EXTRA_KEY_RIDER = "rider";
@@ -534,7 +537,7 @@ public class ManifestActivity extends ListActivity {
                 dejaVu(rider);
                 showRiderResult(COLOR_WARNING, R.string.manifest_action_label_dupe_added);
             } else {
-                welcomeRider(rider);
+                welcomeRider(rider, MAX_MESSAGE_TRIES);
                 synchronized(mRideManifest) {
                     mRideManifest.put(rider, new Ride(rider, mRideManifest.size() + 1,
                             System.currentTimeMillis()));
@@ -544,7 +547,7 @@ public class ManifestActivity extends ListActivity {
             }
         } else {
             if (mRideManifest.containsKey(rider)) {
-                returningRider(rider, mRideManifest.size() == 1);
+                returningRider(rider, mRideManifest.size() == 1, MAX_MESSAGE_TRIES);
                 remove(rider);
                 showRiderResult(COLOR_SUCCESS, R.string.manifest_action_label_dropped);
                 updateList();
@@ -638,12 +641,40 @@ public class ManifestActivity extends ListActivity {
         return param;
     }
 
-    private void welcomeRider(final String rider) {
-        sayRightNow(String.format(getWelcomeString(rider), firstName(rider)));
+    private void welcomeRider(final String rider, int triesLeft) {
+        final String message = getWelcomeString(rider);
+        try {
+            sayRightNow(String.format(message, firstName(rider)));
+        } catch (IllegalFormatException | NullPointerException e) {
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "Bad welcome message: '" + message + "'");
+            }
+            if (triesLeft > 0) {
+                // pull an alternate message
+                welcomeRider(rider, triesLeft - 1);
+            } else {
+                // willing to trust that resource messages won't throw an exception
+                sayRightNow(String.format(getRandomResWelcome(), firstName(rider)));
+            }
+        }
     }
 
-    private void returningRider(final String rider, boolean isLast) {
-        sayRightNow(String.format(getReturnsString(rider, isLast), firstName(rider)));
+    private void returningRider(final String rider, boolean isLast, int triesLeft) {
+        final String message = getReturnsString(rider, isLast);
+        try {
+            sayRightNow(String.format(message, firstName(rider)));
+        } catch (IllegalFormatException | NullPointerException e) {
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "Bad return message: '" + message + "'");
+            }
+            if (triesLeft > 0) {
+                // pull an alternate message
+                returningRider(rider, isLast, triesLeft - 1);
+            } else {
+                // willing to trust that resource messages won't throw an exception
+                sayRightNow(String.format(getRandomResReturn(), firstName(rider)));
+            }
+        }
     }
 
     private void whoAreYou(final String rider) {
@@ -657,23 +688,32 @@ public class ManifestActivity extends ListActivity {
     private void timeToGo() {
         mTts.playSilence(500, TextToSpeech.QUEUE_ADD, null);
         String goString = RiderMessages.getGoString(RiderMessages.timeString());
-        if (goString == null) {
-            final String[] goStrings = getResources().getStringArray(R.array.time_to_go);
-            goString = goStrings[sRandom.nextInt(goStrings.length)];
-        }
-        sayQueued(goString);
+        sayQueued(goString != null ? goString : getRandomResGo());
+    }
+
+    private String getRandomResGo() {
+        final String[] goStrings = getResources().getStringArray(R.array.time_to_go);
+        return goStrings[sRandom.nextInt(goStrings.length)];
     }
 
     private String getWelcomeString(final String rider) {
         final String welcomeString = RiderMessages.getWelcomeString(id(rider),
                 RiderMessages.timeString());
-        return welcomeString != null ? welcomeString : mWelcomes[sRandom.nextInt(mWelcomes.length)];
+        return welcomeString != null ? welcomeString : getRandomResWelcome();
+    }
+
+    private String getRandomResWelcome() {
+        return mWelcomes[sRandom.nextInt(mWelcomes.length)];
     }
 
     private String getReturnsString(final String rider, final boolean isLast) {
         final String returnsString = RiderMessages.getReturnsString(id(rider),
                 RiderMessages.timeString(), isLast);
-        return returnsString != null ? returnsString : mReturns[sRandom.nextInt(mReturns.length)];
+        return returnsString != null ? returnsString : getRandomResReturn();
+    }
+
+    private String getRandomResReturn() {
+        return mReturns[sRandom.nextInt(mReturns.length)];
     }
 
     /**
