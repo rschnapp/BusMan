@@ -905,8 +905,10 @@ public class ManifestActivity extends ListActivity {
      * Store app state (mode and manifest) in a file
      */
     private void saveState() {
-        Log.d(TAG, "saveState()");
-        Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "saveState()");
+            Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        }
         new AsyncTask<Void, Void, Void>() {
 
             @Override
