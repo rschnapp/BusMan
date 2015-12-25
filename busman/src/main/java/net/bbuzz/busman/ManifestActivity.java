@@ -497,7 +497,9 @@ public class ManifestActivity extends ListActivity {
             NdefMessage msg = (NdefMessage) rawMsgs[0];
             final String riderText = new String(msg.getRecords()[0].getPayload());
             if (TEST_RIDER.equals(riderText)) {
-                Log.d(TAG, "Found Test Rider");
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "Found Test Rider");
+                }
                 for (final String rider : sTestRiders) {
                     recordNewRiderFromNfc(rider);
                 }
@@ -514,7 +516,10 @@ public class ManifestActivity extends ListActivity {
      * @param nfcRiderText
      */
     private void recordNewRiderFromNfc(final String nfcRiderText) {
-        Log.d(TAG, "recordLatestRider " + (mIsAddingToManifest ? "add " : "drop ") + nfcRiderText);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "recordLatestRider " + (mIsAddingToManifest ? "add " : "drop ") +
+                    nfcRiderText);
+        }
         mLatestRiderFromNfc = nfcRiderText;
         final int breakingPoint = nfcRiderText.indexOf(ConfigureTagActivity.ID_SEPARATOR);
         final String riderName = nfcRiderText.substring(breakingPoint + 1);
@@ -530,7 +535,9 @@ public class ManifestActivity extends ListActivity {
      * @param rider
      */
     private void recordNewRider(boolean addToManifest, String rider) {
-        Log.d(TAG, "recordLatestRider " + (addToManifest ? "add " : "drop ") + rider);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "recordLatestRider " + (addToManifest ? "add " : "drop ") + rider);
+        }
         mLatestRider.setText(rider);
         if (addToManifest) {
             if (mRideManifest.containsKey(rider)) {
@@ -946,8 +953,10 @@ public class ManifestActivity extends ListActivity {
      * Restore app state (mode and manifest) from a file
      */
     private void restoreState() {
-        Log.d(TAG, "restoreState()");
-        Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "restoreState()");
+            Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        }
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(openFileInput(MANIFEST_STATE_FILE)));
