@@ -159,18 +159,26 @@ public class ManifestActivity extends ListActivity {
                 final int status = cursor.getInt(statusIndex);
                 final int reasonIndex = cursor.getColumnIndex(DownloadManager.COLUMN_REASON);
                 final int reason = cursor.getInt(reasonIndex);
+                final int localFilenameIndex =
+                        cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_FILENAME);
+                final String localFilename = cursor.getString(localFilenameIndex);
                 if (status == DownloadManager.STATUS_SUCCESSFUL) {
                     Log.i(TAG, "messages download succeeded");
-                    new File(RiderMessages.MESSAGE_FILE_OLD).delete();
-                    new File(RiderMessages.MESSAGE_FILE)
-                            .renameTo(new File(RiderMessages.MESSAGE_FILE_OLD));
-                    final File downloadFile = new File(RiderMessages.DOWNLOAD_MESSAGE_FILE);
+                    boolean isJson = isJsonFile(localFilename);
+                    String oldName = (isJson) ?
+                            RiderMessages.MESSAGE_JSON_FILE_OLD : RiderMessages.MESSAGE_FILE_OLD;
+                    String newName = (isJson) ?
+                            RiderMessages.MESSAGE_JSON_FILE : RiderMessages.MESSAGE_FILE;
+
+                    new File(oldName).delete();
+                    new File(newName).renameTo(new File(oldName));
+                    final File downloadFile = new File(localFilename);
                     FileInputStream inStream;
                     FileOutputStream outStream;
                     try {
                         inStream =
                                 new FileInputStream(downloadFile);
-                        outStream = new FileOutputStream(new File(RiderMessages.MESSAGE_FILE));
+                        outStream = new FileOutputStream(new File(newName));
                     } catch (FileNotFoundException e) {
                         Log.w(TAG, "failed to create files while copying downloaded messages: " +
                                 e);
@@ -193,7 +201,7 @@ public class ManifestActivity extends ListActivity {
                     prefs.edit().putLong(SettingsActivity.PREF_MESSAGES_LAST_POLLED,
                             System.currentTimeMillis()).commit();
 
-                    RiderMessages.readMessages();
+                    RiderMessages.sInstance.readMessages();
                 } else {
                     if (status == DownloadManager.STATUS_FAILED) {
                         Log.w(TAG, "messages download failed, error " + reason);
@@ -619,6 +627,10 @@ public class ManifestActivity extends ListActivity {
         }
     }
 
+    private boolean isJsonFile(String filename) {
+        return filename.toLowerCase().endsWith(".json");
+    }
+
     /**
      * Looks for a !command(param) string in phrase.
      *
@@ -687,7 +699,7 @@ public class ManifestActivity extends ListActivity {
 
     private void timeToGo() {
         mTts.playSilence(500, TextToSpeech.QUEUE_ADD, null);
-        String goString = RiderMessages.getGoString(RiderMessages.timeString());
+        String goString = RiderMessages.sInstance.getGoString(RiderMessages.timeString());
         sayQueued(goString != null ? goString : getRandomResGo());
     }
 
@@ -697,7 +709,7 @@ public class ManifestActivity extends ListActivity {
     }
 
     private String getWelcomeString(final String rider) {
-        final String welcomeString = RiderMessages.getWelcomeString(id(rider),
+        final String welcomeString = RiderMessages.sInstance.getWelcomeString(id(rider),
                 RiderMessages.timeString());
         return welcomeString != null ? welcomeString : getRandomResWelcome();
     }
@@ -707,7 +719,7 @@ public class ManifestActivity extends ListActivity {
     }
 
     private String getReturnsString(final String rider, final boolean isLast) {
-        final String returnsString = RiderMessages.getReturnsString(id(rider),
+        final String returnsString = RiderMessages.sInstance.getReturnsString(id(rider),
                 RiderMessages.timeString(), isLast);
         return returnsString != null ? returnsString : getRandomResReturn();
     }
@@ -760,7 +772,7 @@ public class ManifestActivity extends ListActivity {
 
     private void loadMessages() {
         // load the existing messages file, if any
-        RiderMessages.readMessages();
+        RiderMessages.sInstance.readMessages();
 
         /**
          *  if we have a messages_url
