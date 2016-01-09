@@ -52,27 +52,54 @@ public class RiderMessages {
             new SimpleDateFormat("EEE, MMM dd, yyyy HH:mm");
     private static final Random sRandom = new Random();
 
-    private interface JsonSerializable {
-        void writeJson(JsonWriter writer) throws IOException;
+    public static abstract class JsonSerializable {
+        public abstract void writeJson(JsonWriter writer) throws IOException;
 
-        void readJson(JsonReader reader) throws IOException;
+        public abstract void readJson(JsonReader reader) throws IOException;
+
+        protected void writeValue(JsonWriter writer, String name, String value, String defaultValue)
+                throws IOException {
+            if (!value.equals(defaultValue)) {
+                writer.name(name).value(value);
+            }
+        }
+
+        protected void writeValue(JsonWriter writer, String name, int value, int defaultValue)
+                throws IOException {
+            if (value != defaultValue) {
+                writer.name(name).value(value);
+            }
+        }
     }
 
     /**
      * Strings to announce the arrival of a rider upon being added to the manifest
      */
-    static class WelcomeMessage implements JsonSerializable {
-        public String idMatch;
+    static class WelcomeMessage extends JsonSerializable {
+        private static final String DEFAULT_ID_REGEXP = "";
+        private static final String DEFAULT_TIME_REGEXP = "";
+        private static final String DEFAULT_MESSAGE = "";
+        private static final int DEFAULT_WEIGHT = 10;
+
+        public String idRegexp;
         public String timeRegexp;
         public String message;
         public int weight;
 
+
+        public WelcomeMessage() {
+            idRegexp = DEFAULT_ID_REGEXP;
+            timeRegexp = DEFAULT_TIME_REGEXP;
+            message = DEFAULT_MESSAGE;
+            weight = DEFAULT_WEIGHT;
+        }
+
         @Override
         public void writeJson(JsonWriter writer) throws IOException {
-            writer.name("idMatch").value(idMatch);
-            writer.name("timeRegexp").value(timeRegexp);
-            writer.name("message").value(message);
-            writer.name("weight").value(weight);
+            writeValue(writer, "idMatch", idRegexp, DEFAULT_ID_REGEXP);
+            writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
+            writeValue(writer, "message", message, DEFAULT_MESSAGE);
+            writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
         }
 
         @Override
@@ -81,7 +108,7 @@ public class RiderMessages {
                 String name = reader.nextName();
 
                 if (name.equals("idMatch")) {
-                    idMatch = reader.nextString();
+                    idRegexp = reader.nextString();
                 } else if (name.equals("timeRegexp")) {
                     timeRegexp = reader.nextString();
                 } else if (name.equals("message")) {
@@ -99,20 +126,34 @@ public class RiderMessages {
     /**
      * Strings to announce the arrival of a rider upon being removed from the manifest
      */
-    static class ReturnMessage implements JsonSerializable {
+    static class ReturnMessage extends JsonSerializable {
+        private static final String DEFAULT_ID_REGEXP = "";
+        private static final String DEFAULT_TIME_REGEXP = "";
+        private static final String DEFAULT_MESSAGE = "";
+        private static final String DEFAULT_ISLAST = "";
+        private static final int DEFAULT_WEIGHT = 10;
+
         public String idRegexp;
         public String timeRegexp;
         public String message;
         public String isLast;
         public int weight;
 
+        public ReturnMessage() {
+            idRegexp = DEFAULT_ID_REGEXP;
+            timeRegexp = DEFAULT_TIME_REGEXP;
+            message = DEFAULT_MESSAGE;
+            isLast = DEFAULT_ISLAST;
+            weight = DEFAULT_WEIGHT;
+        }
+
         @Override
         public void writeJson(JsonWriter writer) throws IOException {
-            writer.name("idRegexp").value(idRegexp);
-            writer.name("timeRegexp").value(timeRegexp);
-            writer.name("message").value(message);
-            writer.name("isLast").value(isLast);
-            writer.name("weight").value(weight);
+            writeValue(writer, "idRegexp", idRegexp, DEFAULT_ID_REGEXP);
+            writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
+            writeValue(writer, "message", message, DEFAULT_MESSAGE);
+            writeValue(writer, "isLast", isLast, DEFAULT_ISLAST);
+            writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
         }
 
         @Override
@@ -141,16 +182,26 @@ public class RiderMessages {
     /**
      * Strings to announce the depletion of the manifest and the impending departure
      */
-    static class GoMessage implements JsonSerializable {
+    static class GoMessage extends JsonSerializable {
+        private static final String DEFAULT_TIME_REGEXP = "";
+        private static final String DEFAULT_MESSAGE = "";
+        private static final int DEFAULT_WEIGHT = 10;
+
         public String timeRegexp;
         public String message;
         public int weight;
 
+        public GoMessage() {
+            timeRegexp = DEFAULT_TIME_REGEXP;
+            message = DEFAULT_MESSAGE;
+            weight = DEFAULT_WEIGHT;
+        }
+
         @Override
         public void writeJson(JsonWriter writer) throws IOException {
-            writer.name("timeRegexp").value(timeRegexp);
-            writer.name("message").value(message);
-            writer.name("weight").value(weight);
+            writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
+            writeValue(writer, "message", message, DEFAULT_MESSAGE);
+            writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
         }
 
         @Override
@@ -422,7 +473,7 @@ public class RiderMessages {
                 }
                 final WelcomeMessage message = new WelcomeMessage();
                 message.timeRegexp = getString(fields[1]);
-                message.idMatch = getString(fields[2]);
+                message.idRegexp = getString(fields[2]);
                 message.message = getString(fields[3]);
                 message.weight = getWeight(fields[4]);
                 mWelcomeMessages.add(message);
@@ -537,9 +588,9 @@ public class RiderMessages {
         final ArrayList<CandidateMessage> candidates = new ArrayList<CandidateMessage>();
         int totalWeight = 0;
         for (final WelcomeMessage message: mWelcomeMessages) {
-            final String idMatch = message.idMatch;
+            final String idRegexp = message.idRegexp;
             final String timeRegexp = message.timeRegexp;
-            if ((!idMatch.isEmpty() && !rider.matches(idMatch))
+            if ((!idRegexp.isEmpty() && !rider.matches(idRegexp))
                     || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
                     || (message.message.equals(sLatestWelcomeString))) {
                 continue;
