@@ -96,7 +96,7 @@ public class RiderMessages {
 
         @Override
         public void writeJson(JsonWriter writer) throws IOException {
-            writeValue(writer, "idMatch", idRegexp, DEFAULT_ID_REGEXP);
+            writeValue(writer, "idRegexp", idRegexp, DEFAULT_ID_REGEXP);
             writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
             writeValue(writer, "message", message, DEFAULT_MESSAGE);
             writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
@@ -107,7 +107,7 @@ public class RiderMessages {
             while (reader.hasNext()) {
                 String name = reader.nextName();
 
-                if (name.equals("idMatch")) {
+                if (name.equals("idRegexp")) {
                     idRegexp = reader.nextString();
                 } else if (name.equals("timeRegexp")) {
                     timeRegexp = reader.nextString();
