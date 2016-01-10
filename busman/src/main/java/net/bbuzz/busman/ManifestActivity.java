@@ -590,7 +590,7 @@ public class ManifestActivity extends ListActivity {
         int openBracePos = rider.indexOf('[');
         int closeBracePos = rider.indexOf(']');
 
-        if (openBracePos == -1 || closeBracePos == -1) {
+        if (openBracePos == -1 || closeBracePos <= openBracePos + 1) {
             return null;
         }
         return rider.substring(openBracePos + 1, closeBracePos);
