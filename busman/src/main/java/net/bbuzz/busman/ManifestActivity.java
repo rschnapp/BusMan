@@ -45,6 +45,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -468,14 +469,20 @@ public class ManifestActivity extends ListActivity {
 
             case R.id.option_add_rider:
                 final View riderView = LayoutInflater.from(this).inflate(R.layout.add_rider, null);
-                final EditText riderName = (EditText)riderView.findViewById(R.id.rider_text);
+                final EditText riderNameView = (EditText)riderView.findViewById(R.id.rider_text);
 
                 new AlertDialog.Builder(this)
                     .setTitle(R.string.item_add_rider)
                     .setView(riderView)
                     .setPositiveButton(R.string.add_button, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            recordNewRider(true, riderName.getText().toString());
+                            String riderName = riderNameView.getText().toString();
+                            // Validate the name and warn the user if it's incorrect.
+                            if (id(riderName) == null) {
+                                Toast.makeText(ManifestActivity.this,
+                                        R.string.bad_rider_id, Toast.LENGTH_LONG).show();
+                            }
+                            recordNewRider(true, riderName);
                         }
                     })
                     .setNegativeButton(android.R.string.cancel, null).create().show();
@@ -585,10 +592,16 @@ public class ManifestActivity extends ListActivity {
 
     /**
      * @param rider - String in form "rider's name [rider's id]"
-     * @return rider's id
+     * @return rider's id, or null if the string is not in the expected format
      */
     private static String id(final String rider) {
-        return rider.substring(rider.indexOf('[') + 1, rider.indexOf(']'));
+        int openBracePos = rider.indexOf('[');
+        int closeBracePos = rider.indexOf(']');
+
+        if (openBracePos == -1 || closeBracePos <= openBracePos + 1) {
+            return null;
+        }
+        return rider.substring(openBracePos + 1, closeBracePos);
     }
 
     private void sayRightNow(String phrase) {
@@ -709,6 +722,10 @@ public class ManifestActivity extends ListActivity {
     }
 
     private String getWelcomeString(final String rider) {
+        final String riderId = id(rider);
+        if (riderId == null) {
+            return getRandomResWelcome();
+        }
         final String welcomeString = RiderMessages.sInstance.getWelcomeString(id(rider),
                 RiderMessages.timeString());
         return welcomeString != null ? welcomeString : getRandomResWelcome();
@@ -719,6 +736,10 @@ public class ManifestActivity extends ListActivity {
     }
 
     private String getReturnsString(final String rider, final boolean isLast) {
+        final String riderId = id(rider);
+        if (riderId == null) {
+            return getRandomResReturn();
+        }
         final String returnsString = RiderMessages.sInstance.getReturnsString(id(rider),
                 RiderMessages.timeString(), isLast);
         return returnsString != null ? returnsString : getRandomResReturn();
