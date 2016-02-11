@@ -637,10 +637,6 @@ public class ManifestActivity extends ListActivity {
         }
     }
 
-    private boolean isJsonFile(String filename) {
-        return filename.toLowerCase().endsWith(".json");
-    }
-
     /**
      * Looks for a !command(param) string in phrase.
      *
