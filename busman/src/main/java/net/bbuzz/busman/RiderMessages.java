@@ -2,6 +2,7 @@ package net.bbuzz.busman;
 
 import android.os.AsyncTask;
 import android.os.Environment;
+import android.support.annotation.VisibleForTesting;
 import android.util.JsonReader;
 import android.util.JsonWriter;
 import android.util.Log;
@@ -410,7 +411,8 @@ public class RiderMessages {
         return result;
     }
 
-    private void parseJsonStream(InputStream jsonStream) {
+    @VisibleForTesting
+    void parseJsonStream(InputStream jsonStream) {
         resetMessages();
 
         try {
@@ -697,5 +699,20 @@ public class RiderMessages {
             sInitializedDirs = true;
         }
         return MESSAGE_JSON_FILE;
+    }
+
+    @VisibleForTesting
+    List<WelcomeMessage> getWelcomeMessages() {
+        return mWelcomeMessages;
+    }
+
+    @VisibleForTesting
+    List<ReturnMessage> getReturnMessages() {
+        return mReturnMessages;
+    }
+
+    @VisibleForTesting
+    List<GoMessage> getGoMessages() {
+        return mGoMessages;
     }
 }
