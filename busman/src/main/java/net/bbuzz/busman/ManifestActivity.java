@@ -165,11 +165,8 @@ public class ManifestActivity extends ListActivity {
                 final String localFilename = cursor.getString(localFilenameIndex);
                 if (status == DownloadManager.STATUS_SUCCESSFUL) {
                     Log.i(TAG, "messages download succeeded");
-                    boolean isJson = isJsonFile(localFilename);
-                    String oldName = (isJson) ?
-                            RiderMessages.MESSAGE_JSON_FILE_OLD : RiderMessages.MESSAGE_FILE_OLD;
-                    String newName = (isJson) ?
-                            RiderMessages.MESSAGE_JSON_FILE : RiderMessages.MESSAGE_FILE;
+                    String oldName = RiderMessages.MESSAGE_JSON_FILE_OLD;
+                    String newName = RiderMessages.MESSAGE_JSON_FILE;
 
                     new File(oldName).delete();
                     new File(newName).renameTo(new File(oldName));
@@ -640,10 +637,6 @@ public class ManifestActivity extends ListActivity {
         }
     }
 
-    private boolean isJsonFile(String filename) {
-        return filename.toLowerCase().endsWith(".json");
-    }
-
     /**
      * Looks for a !command(param) string in phrase.
      *
@@ -827,7 +820,7 @@ public class ManifestActivity extends ListActivity {
         // Construct a DownloadManager.Request to retrieve the messages file
         final DownloadManager.Request request = new DownloadManager.Request(Uri.parse(messagesUrl))
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
-                        RiderMessages.MESSAGE_FILE_NAME)
+                        RiderMessages.MESSAGE_JSON_FILE_NAME)
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
                 .setMimeType("text/plain");
 
