@@ -39,7 +39,7 @@ public class RiderMessagesTest {
         welcomeMessage = riderMessages.getWelcomeMessages().get(1);
         assertEquals("", welcomeMessage.timeRegexp);
         assertEquals("hi %s", welcomeMessage.message);
-        assertEquals(10, welcomeMessage.weight);
+        assertEquals(RiderMessages.DEFAULT_WEIGHT, welcomeMessage.weight);
 
         assertEquals(2, riderMessages.getReturnMessages().size());
         RiderMessages.ReturnMessage returnMessage = riderMessages.getReturnMessages().get(0);
@@ -52,7 +52,7 @@ public class RiderMessagesTest {
         assertEquals("", returnMessage.idRegexp);
         assertEquals("", returnMessage.timeRegexp);
         assertEquals("heading home %s", returnMessage.message);
-        assertEquals(10, returnMessage.weight);
+        assertEquals(RiderMessages.DEFAULT_WEIGHT, returnMessage.weight);
 
         assertEquals(3, riderMessages.getGoMessages().size());
         RiderMessages.GoMessage goMessage = riderMessages.getGoMessages().get(0);
@@ -63,11 +63,11 @@ public class RiderMessagesTest {
         goMessage = riderMessages.getGoMessages().get(1);
         assertEquals(".*May 04.*", goMessage.timeRegexp);
         assertEquals("Remember,,, the Force will be with you, always. Now, let's make the jump to light speed", goMessage.message);
-        assertEquals(10, goMessage.weight);
+        assertEquals(RiderMessages.DEFAULT_WEIGHT, goMessage.weight);
 
         goMessage = riderMessages.getGoMessages().get(2);
         assertEquals("", goMessage.timeRegexp);
         assertEquals("Hooray! We're all aboard. Time to go!", goMessage.message);
-        assertEquals(10, goMessage.weight);
+        assertEquals(RiderMessages.DEFAULT_WEIGHT, goMessage.weight);
     }
 }
