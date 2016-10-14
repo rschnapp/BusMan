@@ -2,6 +2,7 @@ package net.bbuzz.busman;
 
 import android.os.AsyncTask;
 import android.os.Environment;
+import android.support.annotation.VisibleForTesting;
 import android.util.JsonReader;
 import android.util.JsonWriter;
 import android.util.Log;
@@ -26,21 +27,15 @@ public class RiderMessages {
 
     private final static String TAG =  "RiderMessages";
 
-    public final static String MESSAGE_FILE_NAME = "BusManMessages";
-
     public final static String MESSAGE_JSON_FILE_NAME = "BusManMessages.json";
 
     public final static File DOWNLOAD_DIR =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-    public final static String DOWNLOAD_MESSAGE_FILE = new File(DOWNLOAD_DIR, MESSAGE_FILE_NAME)
-            .getAbsolutePath();
+    public final static String DOWNLOAD_MESSAGE_FILE = new File(DOWNLOAD_DIR,
+            MESSAGE_JSON_FILE_NAME).getAbsolutePath();
 
     public final static File DATA_DIR =
             new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/BusMan");
-    public final static String MESSAGE_FILE =
-            new File(DATA_DIR, MESSAGE_FILE_NAME).getAbsolutePath();
-    public final static String MESSAGE_FILE_OLD =
-            new File(DATA_DIR, MESSAGE_FILE_NAME + ".old").getAbsolutePath();
     public final static String MESSAGE_JSON_FILE =
             new File(DATA_DIR, MESSAGE_JSON_FILE_NAME).getAbsolutePath();
     public final static String MESSAGE_JSON_FILE_OLD =
@@ -230,12 +225,9 @@ public class RiderMessages {
     public static RiderMessages sInstance = new RiderMessages();
 
     /*
-     * The BusManMessages file is a list of lines in one of three forms:
-     *  w/timeRegexp/idRegexp/message/weight - a welcome message
-     *  r/timeRegexp/idRegexp/message/isLast/weight - a "returning" message
-     *  g/timeRegexp/message/weight - a "go" message
+     *  The BusManMessages file is a JSON file with three different lists: welcome messages,
+     *  returning messages, go messages.
      *
-     *  The first field disambiguates among the types of messages (w is welcome, etc.)
      *  timeRegexp is a regular expression to match against a time/date string in the default
      *  locale, of the form
      *          "Sun, Mar 23, 2014 14:07"
@@ -264,72 +256,13 @@ public class RiderMessages {
      * Look for MESSAGE_FILE. If found, read it in and populate the message arrays.
      */
     public void readMessages() {
-        // Let's try the JSON file first.
-        if (!readJsonMessages()) {
-            // Couldn't load the JSON file, let's fall back to the old-fashioned text file.
-            final File messageFile = new File(getMessageFile());
-            if (!messageFile.exists()) {
-                if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                    Log.v(TAG, "readMessages() - no file");
-                }
-                resetMessages();
-                return;
-            }
-            final long messageFileModDate = messageFile.lastModified();
-            if (sMessageFileLastModified == messageFileModDate) {
-                // no need to re-read the file
-                if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                    Log.v(TAG, "readMessages() - file hasn't changed");
-                }
-                return;
-            }
-
-            new AsyncTask<Void, Void, Void>() {
-
-                @Override
-                protected Void doInBackground(Void... params) {
-                    sMessageFileLastModified = messageFileModDate;
-                    final InputStream messageStream;
-                    try {
-                        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                            Log.v(TAG, "readMessages() - opening");
-                        }
-                        messageStream = new FileInputStream(messageFile);
-                    } catch (FileNotFoundException e) {
-                        if (Log.isLoggable(TAG, Log.DEBUG)) {
-                            Log.d(TAG, "Didn't find " + MESSAGE_FILE);
-                        }
-                        return null;
-                    }
-
-                    parseMessageStream(messageStream);
-                    FileWriter fileWriter = null;
-                    try {
-                        fileWriter = new FileWriter(MESSAGE_JSON_FILE);
-                        JsonWriter writer = new JsonWriter(fileWriter);
-                        writeJson(writer);
-                        writer.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        throw (new RuntimeException(e));
-                    }
-                    return null;
-                }
-
-            }.execute((Void) null);
-        }
-    }
-    /**
-     * Look for MESSAGE_JSON_FILE. If found, read it in and populate the message arrays.
-     */
-    public boolean readJsonMessages() {
-        // Let's try the JSON file first.
         final File messageFile = new File(getJsonMessageFile());
         if (!messageFile.exists()) {
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
                 Log.v(TAG, "readMessages() - no JSON file");
             }
-            return false;
+            resetMessages();
+            return;
         }
         final long messageFileModDate = messageFile.lastModified();
         if (sMessageFileLastModified == messageFileModDate) {
@@ -337,7 +270,7 @@ public class RiderMessages {
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
                 Log.v(TAG, "readMessages() - JSON file hasn't changed");
             }
-            return true;
+            return;
         }
 
         new AsyncTask<Void, Void, Void>() {
@@ -353,7 +286,7 @@ public class RiderMessages {
                     messageStream = new FileInputStream(messageFile);
                 } catch (FileNotFoundException e) {
                     if (Log.isLoggable(TAG, Log.DEBUG)) {
-                        Log.d(TAG, "Didn't find " + MESSAGE_FILE);
+                        Log.d(TAG, "Didn't find " + MESSAGE_JSON_FILE);
                     }
                     return null;
                 }
@@ -363,7 +296,6 @@ public class RiderMessages {
             }
 
         }.execute((Void) null);
-        return true;
     }
 
     private void writeJson(JsonWriter writer) throws IOException {
@@ -410,7 +342,8 @@ public class RiderMessages {
         return result;
     }
 
-    private void parseJsonStream(InputStream jsonStream) {
+    @VisibleForTesting
+    void parseJsonStream(InputStream jsonStream) {
         resetMessages();
 
         try {
@@ -436,97 +369,6 @@ public class RiderMessages {
             reader.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void parseMessageStream(InputStream messageStream) {
-        final BufferedReader messageReader =
-                new BufferedReader(new InputStreamReader(messageStream));
-
-        resetMessages();
-
-        String line;
-        while (true) {
-            try {
-                line = messageReader.readLine();
-            } catch (IOException e) {
-                break;
-            }
-            if (line == null) {
-                break;
-            }
-            // trim leading spaces
-            line = line.replaceFirst("^\\s+", "");
-            // Skip empty or comment lines (first non-whitespace is a '#')
-            if ((line.length() == 0) || (line.matches("^#.*"))) {
-                continue;
-            }
-            final String fields[] = (line + " ").split("/");
-            // process a "welcome" message
-            if ("w".equals(fields[0])) {
-                if (fields.length != 5) {
-                    if (Log.isLoggable(TAG, Log.ERROR)) {
-                        Log.e(TAG, "invalid welcome message: needs 5 fields, has "
-                                + fields.length);
-                    }
-                    continue;
-                }
-                final WelcomeMessage message = new WelcomeMessage();
-                message.timeRegexp = getString(fields[1]);
-                message.idRegexp = getString(fields[2]);
-                message.message = getString(fields[3]);
-                message.weight = getWeight(fields[4]);
-                mWelcomeMessages.add(message);
-
-                // process a "returning" message
-            } else if ("r".equals(fields[0])) {
-                if (fields.length != 6) {
-                    if (Log.isLoggable(TAG, Log.ERROR)) {
-                        Log.e(TAG, "invalid return message: needs 6 fields, has "
-                                + fields.length);
-                    }
-                    continue;
-                }
-                final ReturnMessage message = new ReturnMessage();
-                message.timeRegexp = getString(fields[1]);
-                message.idRegexp = getString(fields[2]);
-                message.message = getString(fields[3]);
-                message.isLast = getString(fields[4]);
-                message.weight = getWeight(fields[5]);
-                mReturnMessages.add(message);
-
-                // process a "go" message
-            } else if ("g".equals(fields[0])) {
-                if (fields.length != 4) {
-                    if (Log.isLoggable(TAG, Log.ERROR)) {
-                        Log.e(TAG, "invalid return message: needs 4 fields, has "
-                                + fields.length);
-                    }
-                    continue;
-                }
-                final GoMessage message = new GoMessage();
-                message.timeRegexp = getString(fields[1]);
-                message.message = getString(fields[2]);
-                message.weight = getWeight(fields[3]);
-                mGoMessages.add(message);
-
-                // unrecognized message type -- ignore it
-            } else {
-                if (Log.isLoggable(TAG, Log.WARN)) {
-                    Log.w(TAG, "unrecognized: " + line);
-                }
-            }
-        }
-
-        try {
-            if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                Log.v(TAG, "readMessages() - closing");
-            }
-            messageStream.close();
-        } catch (IOException e) {
-            if (Log.isLoggable(TAG, Log.ERROR)) {
-                Log.e(TAG, "Error while closing " + MESSAGE_FILE);
-            }
         }
     }
 
@@ -683,7 +525,7 @@ public class RiderMessages {
             }
             sInitializedDirs = true;
         }
-        return MESSAGE_FILE;
+        return MESSAGE_JSON_FILE;
     }
 
     public static String getJsonMessageFile() {
@@ -697,5 +539,20 @@ public class RiderMessages {
             sInitializedDirs = true;
         }
         return MESSAGE_JSON_FILE;
+    }
+
+    @VisibleForTesting
+    List<WelcomeMessage> getWelcomeMessages() {
+        return mWelcomeMessages;
+    }
+
+    @VisibleForTesting
+    List<ReturnMessage> getReturnMessages() {
+        return mReturnMessages;
+    }
+
+    @VisibleForTesting
+    List<GoMessage> getGoMessages() {
+        return mGoMessages;
     }
 }

@@ -1,0 +1,37 @@
+{
+  "welcomeMessages": [
+    {
+      "timeRegexp": ".*Mar 17.*",
+      "message": "Top of the morning to you, %s!",
+      "weight": 25
+    },
+    {
+      "message": "hi %s"
+    }
+  ],
+  "returnMessages": [
+    {
+      "idRegexp": "garth.*",
+      "timeRegexp": ".*Apr 01.*",
+      "message": "Yo %s! Rock on home, dude!",
+      "weight": 1000000
+    },
+    {
+      "message": "heading home %s"
+    }
+  ],
+  "goMessages": [
+    {
+      "timeRegexp": ".*Apr 01.*",
+      "message": "I hope you all enjoyed April Fools Day. Now, let's go home!",
+      "weight": 10000
+    },
+    {
+      "timeRegexp": ".*May 04.*",
+      "message": "Remember,,, the Force will be with you, always. Now, let's make the jump to light speed"
+    },
+    {
+      "message": "Hooray! We're all aboard. Time to go!"
+    }
+  ]
+}
