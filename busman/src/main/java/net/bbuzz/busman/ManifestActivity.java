@@ -164,7 +164,9 @@ public class ManifestActivity extends ListActivity {
                         cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_FILENAME);
                 final String localFilename = cursor.getString(localFilenameIndex);
                 if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                    Log.i(TAG, "messages download succeeded");
+                    if (Log.isLoggable(TAG, Log.INFO)) {
+                        Log.i(TAG, "messages download succeeded");
+                    }
                     String oldName = RiderMessages.MESSAGE_JSON_FILE_OLD;
                     String newName = RiderMessages.MESSAGE_JSON_FILE;
 
@@ -178,8 +180,10 @@ public class ManifestActivity extends ListActivity {
                                 new FileInputStream(downloadFile);
                         outStream = new FileOutputStream(new File(newName));
                     } catch (FileNotFoundException e) {
-                        Log.w(TAG, "failed to create files while copying downloaded messages: " +
-                                e);
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "failed to create files while copying " +
+                                    "downloaded messages: " + e);
+                        }
                         return;
                     }
                     FileChannel inChannel = inStream.getChannel();
@@ -189,7 +193,9 @@ public class ManifestActivity extends ListActivity {
                         inStream.close();
                         outStream.close();
                     } catch (IOException e) {
-                        Log.w(TAG, "failed to copy downloaded messages: " + e);
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "failed to copy downloaded messages: " + e);
+                        }
                         return;
                     }
                     downloadFile.delete();
@@ -201,11 +207,13 @@ public class ManifestActivity extends ListActivity {
 
                     RiderMessages.sInstance.readMessages();
                 } else {
-                    if (status == DownloadManager.STATUS_FAILED) {
-                        Log.w(TAG, "messages download failed, error " + reason);
-                    } else {
-                        Log.w(TAG, "messages download failed, status=" + status +
-                                ", reason=" + reason);
+                    if (Log.isLoggable(TAG, Log.WARN)) {
+                        if (status == DownloadManager.STATUS_FAILED) {
+                            Log.w(TAG, "messages download failed, error " + reason);
+                        } else {
+                            Log.w(TAG, "messages download failed, status=" + status +
+                                    ", reason=" + reason);
+                        }
                     }
                 }
             }
@@ -959,13 +967,17 @@ public class ManifestActivity extends ListActivity {
                         }
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "saveState create/write failed", e);
+                    if (Log.isLoggable(TAG, Log.ERROR)) {
+                        Log.e(TAG, "saveState create/write failed", e);
+                    }
                 } finally {
                     if (writer != null) {
                         try {
                             writer.close();
                         } catch (IOException e) {
-                            Log.e(TAG, "saveState close failed", e);
+                            if (Log.isLoggable(TAG, Log.ERROR)) {
+                                Log.e(TAG, "saveState close failed", e);
+                            }
                         }
                     }
                 }
@@ -998,13 +1010,17 @@ public class ManifestActivity extends ListActivity {
             }
             invalidateOptionsMenu();
         } catch (Exception e) {
-            Log.e(TAG, "restoreState open/read failed", e);
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "restoreState open/read failed", e);
+            }
         } finally {
             if (reader != null) {
                 try {
                     reader.close();
                 } catch (IOException e) {
-                    Log.e(TAG, "restoreState close failed", e);
+                    if (Log.isLoggable(TAG, Log.ERROR)) {
+                        Log.e(TAG, "restoreState close failed", e);
+                    }
                 }
             }
         }
