@@ -164,7 +164,9 @@ public class ManifestActivity extends ListActivity {
                         cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_FILENAME);
                 final String localFilename = cursor.getString(localFilenameIndex);
                 if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                    Log.i(TAG, "messages download succeeded");
+                    if (Log.isLoggable(TAG, Log.INFO)) {
+                        Log.i(TAG, "messages download succeeded");
+                    }
                     String oldName = RiderMessages.MESSAGE_JSON_FILE_OLD;
                     String newName = RiderMessages.MESSAGE_JSON_FILE;
 
@@ -178,8 +180,10 @@ public class ManifestActivity extends ListActivity {
                                 new FileInputStream(downloadFile);
                         outStream = new FileOutputStream(new File(newName));
                     } catch (FileNotFoundException e) {
-                        Log.w(TAG, "failed to create files while copying downloaded messages: " +
-                                e);
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "failed to create files while copying " +
+                                    "downloaded messages: " + e);
+                        }
                         return;
                     }
                     FileChannel inChannel = inStream.getChannel();
@@ -189,7 +193,9 @@ public class ManifestActivity extends ListActivity {
                         inStream.close();
                         outStream.close();
                     } catch (IOException e) {
-                        Log.w(TAG, "failed to copy downloaded messages: " + e);
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "failed to copy downloaded messages: " + e);
+                        }
                         return;
                     }
                     downloadFile.delete();
@@ -201,11 +207,13 @@ public class ManifestActivity extends ListActivity {
 
                     RiderMessages.sInstance.readMessages();
                 } else {
-                    if (status == DownloadManager.STATUS_FAILED) {
-                        Log.w(TAG, "messages download failed, error " + reason);
-                    } else {
-                        Log.w(TAG, "messages download failed, status=" + status +
-                                ", reason=" + reason);
+                    if (Log.isLoggable(TAG, Log.WARN)) {
+                        if (status == DownloadManager.STATUS_FAILED) {
+                            Log.w(TAG, "messages download failed, error " + reason);
+                        } else {
+                            Log.w(TAG, "messages download failed, status=" + status +
+                                    ", reason=" + reason);
+                        }
                     }
                 }
             }
@@ -509,7 +517,9 @@ public class ManifestActivity extends ListActivity {
             NdefMessage msg = (NdefMessage) rawMsgs[0];
             final String riderText = new String(msg.getRecords()[0].getPayload());
             if (TEST_RIDER.equals(riderText)) {
-                Log.d(TAG, "Found Test Rider");
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "Found Test Rider");
+                }
                 for (final String rider : sTestRiders) {
                     recordNewRiderFromNfc(rider);
                 }
@@ -526,7 +536,10 @@ public class ManifestActivity extends ListActivity {
      * @param nfcRiderText
      */
     private void recordNewRiderFromNfc(final String nfcRiderText) {
-        Log.d(TAG, "recordLatestRider " + (mIsAddingToManifest ? "add " : "drop ") + nfcRiderText);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "recordLatestRider " + (mIsAddingToManifest ? "add " : "drop ") +
+                    nfcRiderText);
+        }
         mLatestRiderFromNfc = nfcRiderText;
         final int breakingPoint = nfcRiderText.indexOf(ConfigureTagActivity.ID_SEPARATOR);
         final String riderName = nfcRiderText.substring(breakingPoint + 1);
@@ -542,7 +555,9 @@ public class ManifestActivity extends ListActivity {
      * @param rider
      */
     private void recordNewRider(boolean addToManifest, String rider) {
-        Log.d(TAG, "recordLatestRider " + (addToManifest ? "add " : "drop ") + rider);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "recordLatestRider " + (addToManifest ? "add " : "drop ") + rider);
+        }
         mLatestRider.setText(rider);
         if (addToManifest) {
             if (mRideManifest.containsKey(rider)) {
@@ -931,8 +946,10 @@ public class ManifestActivity extends ListActivity {
      * Store app state (mode and manifest) in a file
      */
     private void saveState() {
-        Log.d(TAG, "saveState()");
-        Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "saveState()");
+            Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        }
         new AsyncTask<Void, Void, Void>() {
 
             @Override
@@ -950,13 +967,17 @@ public class ManifestActivity extends ListActivity {
                         }
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "saveState create/write failed", e);
+                    if (Log.isLoggable(TAG, Log.ERROR)) {
+                        Log.e(TAG, "saveState create/write failed", e);
+                    }
                 } finally {
                     if (writer != null) {
                         try {
                             writer.close();
                         } catch (IOException e) {
-                            Log.e(TAG, "saveState close failed", e);
+                            if (Log.isLoggable(TAG, Log.ERROR)) {
+                                Log.e(TAG, "saveState close failed", e);
+                            }
                         }
                     }
                 }
@@ -970,8 +991,10 @@ public class ManifestActivity extends ListActivity {
      * Restore app state (mode and manifest) from a file
      */
     private void restoreState() {
-        Log.d(TAG, "restoreState()");
-        Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "restoreState()");
+            Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        }
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(openFileInput(MANIFEST_STATE_FILE)));
@@ -987,13 +1010,17 @@ public class ManifestActivity extends ListActivity {
             }
             invalidateOptionsMenu();
         } catch (Exception e) {
-            Log.e(TAG, "restoreState open/read failed", e);
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "restoreState open/read failed", e);
+            }
         } finally {
             if (reader != null) {
                 try {
                     reader.close();
                 } catch (IOException e) {
-                    Log.e(TAG, "restoreState close failed", e);
+                    if (Log.isLoggable(TAG, Log.ERROR)) {
+                        Log.e(TAG, "restoreState close failed", e);
+                    }
                 }
             }
         }

@@ -111,7 +111,9 @@ public class RiderMessages {
                 } else if (name.equals("weight")) {
                     weight = reader.nextInt();
                 } else {
-                    Log.w(TAG, "Unknown WelcomeMessage key: " + name);
+                    if (Log.isLoggable(TAG, Log.WARN)) {
+                        Log.w(TAG, "Unknown WelcomeMessage key: " + name);
+                    }
                     reader.skipValue();
                 }
             }
@@ -167,7 +169,9 @@ public class RiderMessages {
                 } else if (name.equals("weight")) {
                     weight = reader.nextInt();
                 } else {
-                    Log.w(TAG, "Unknown ReturnMessage key: " + name);
+                    if (Log.isLoggable(TAG, Log.WARN)) {
+                        Log.w(TAG, "Unknown ReturnMessage key: " + name);
+                    }
                     reader.skipValue();
                 }
             }
@@ -211,7 +215,9 @@ public class RiderMessages {
                 } else if (name.equals("weight")) {
                     weight = reader.nextInt();
                 } else {
-                    Log.w(TAG, "Unknown GoMessage key: " + name);
+                    if (Log.isLoggable(TAG, Log.WARN)) {
+                        Log.w(TAG, "Unknown GoMessage key: " + name);
+                    }
                     reader.skipValue();
                 }
             }
@@ -333,7 +339,9 @@ public class RiderMessages {
                 element.readJson(reader);
                 result.add(element);
             } catch (Exception e) {
-                Log.e(TAG, "Error instantiating " + clazz.getName(), e);
+                if (Log.isLoggable(TAG, Log.ERROR)) {
+                    Log.e(TAG, "Error instantiating " + clazz.getName(), e);
+                }
             }
             reader.endObject();
         }
@@ -360,7 +368,9 @@ public class RiderMessages {
                 } else if (name.equals("goMessages")) {
                     mGoMessages = readJsonArray(reader, GoMessage.class);
                 } else {
-                    Log.w(TAG, "Unknown top-level key " + name);
+                    if (Log.isLoggable(TAG, Log.WARN)) {
+                        Log.w(TAG, "Unknown top-level key " + name);
+                    }
                     reader.skipValue();
                 }
             }
