@@ -2,12 +2,18 @@ package net.bbuzz.busman;
 
 import android.os.AsyncTask;
 import android.os.Environment;
+import android.support.annotation.VisibleForTesting;
+import android.util.JsonReader;
+import android.util.JsonWriter;
 import android.util.Log;
+
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -21,19 +27,19 @@ public class RiderMessages {
 
     private final static String TAG =  "RiderMessages";
 
-    public final static String MESSAGE_FILE_NAME = "BusManMessages";
+    public final static String MESSAGE_JSON_FILE_NAME = "BusManMessages.json";
 
     public final static File DOWNLOAD_DIR =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-    public final static String DOWNLOAD_MESSAGE_FILE = new File(DOWNLOAD_DIR, MESSAGE_FILE_NAME)
-            .getAbsolutePath();
+    public final static String DOWNLOAD_MESSAGE_FILE = new File(DOWNLOAD_DIR,
+            MESSAGE_JSON_FILE_NAME).getAbsolutePath();
 
     public final static File DATA_DIR =
             new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/BusMan");
-    public final static String MESSAGE_FILE =
-            new File(DATA_DIR, MESSAGE_FILE_NAME).getAbsolutePath();
-    public final static String MESSAGE_FILE_OLD =
-            new File(DATA_DIR, MESSAGE_FILE_NAME + ".old").getAbsolutePath();
+    public final static String MESSAGE_JSON_FILE =
+            new File(DATA_DIR, MESSAGE_JSON_FILE_NAME).getAbsolutePath();
+    public final static String MESSAGE_JSON_FILE_OLD =
+            new File(DATA_DIR, MESSAGE_JSON_FILE_NAME + ".old").getAbsolutePath();
 
     public final static int DEFAULT_WEIGHT = 10;
     // SimpleDateFormat e.g., "Sun, Mar 23, 2014 14:07"
@@ -41,47 +47,187 @@ public class RiderMessages {
             new SimpleDateFormat("EEE, MMM dd, yyyy HH:mm");
     private static final Random sRandom = new Random();
 
+    public static abstract class JsonSerializable {
+        public abstract void writeJson(JsonWriter writer) throws IOException;
+
+        public abstract void readJson(JsonReader reader) throws IOException;
+
+        protected void writeValue(JsonWriter writer, String name, String value, String defaultValue)
+                throws IOException {
+            if (!value.equals(defaultValue)) {
+                writer.name(name).value(value);
+            }
+        }
+
+        protected void writeValue(JsonWriter writer, String name, int value, int defaultValue)
+                throws IOException {
+            if (value != defaultValue) {
+                writer.name(name).value(value);
+            }
+        }
+    }
+
     /**
      * Strings to announce the arrival of a rider upon being added to the manifest
      */
-    private static class WelcomeMessage {
-        public String idMatch;
+    static class WelcomeMessage extends JsonSerializable {
+        private static final String DEFAULT_ID_REGEXP = "";
+        private static final String DEFAULT_TIME_REGEXP = "";
+        private static final String DEFAULT_MESSAGE = "";
+        private static final int DEFAULT_WEIGHT = 10;
+
+        public String idRegexp;
         public String timeRegexp;
         public String message;
         public int weight;
+
+
+        public WelcomeMessage() {
+            idRegexp = DEFAULT_ID_REGEXP;
+            timeRegexp = DEFAULT_TIME_REGEXP;
+            message = DEFAULT_MESSAGE;
+            weight = DEFAULT_WEIGHT;
+        }
+
+        @Override
+        public void writeJson(JsonWriter writer) throws IOException {
+            writeValue(writer, "idRegexp", idRegexp, DEFAULT_ID_REGEXP);
+            writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
+            writeValue(writer, "message", message, DEFAULT_MESSAGE);
+            writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
+        }
+
+        @Override
+        public void readJson(JsonReader reader) throws IOException {
+            while (reader.hasNext()) {
+                String name = reader.nextName();
+
+                if (name.equals("idRegexp")) {
+                    idRegexp = reader.nextString();
+                } else if (name.equals("timeRegexp")) {
+                    timeRegexp = reader.nextString();
+                } else if (name.equals("message")) {
+                    message = reader.nextString();
+                } else if (name.equals("weight")) {
+                    weight = reader.nextInt();
+                } else {
+                    Log.w(TAG, "Unknown WelcomeMessage key: " + name);
+                    reader.skipValue();
+                }
+            }
+        }
     }
 
     /**
      * Strings to announce the arrival of a rider upon being removed from the manifest
      */
-    private static class ReturnMessage {
+    static class ReturnMessage extends JsonSerializable {
+        private static final String DEFAULT_ID_REGEXP = "";
+        private static final String DEFAULT_TIME_REGEXP = "";
+        private static final String DEFAULT_MESSAGE = "";
+        private static final String DEFAULT_ISLAST = "";
+        private static final int DEFAULT_WEIGHT = 10;
+
         public String idRegexp;
         public String timeRegexp;
         public String message;
         public String isLast;
         public int weight;
+
+        public ReturnMessage() {
+            idRegexp = DEFAULT_ID_REGEXP;
+            timeRegexp = DEFAULT_TIME_REGEXP;
+            message = DEFAULT_MESSAGE;
+            isLast = DEFAULT_ISLAST;
+            weight = DEFAULT_WEIGHT;
+        }
+
+        @Override
+        public void writeJson(JsonWriter writer) throws IOException {
+            writeValue(writer, "idRegexp", idRegexp, DEFAULT_ID_REGEXP);
+            writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
+            writeValue(writer, "message", message, DEFAULT_MESSAGE);
+            writeValue(writer, "isLast", isLast, DEFAULT_ISLAST);
+            writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
+        }
+
+        @Override
+        public void readJson(JsonReader reader) throws IOException {
+            while (reader.hasNext()) {
+                String name = reader.nextName();
+
+                if (name.equals("idRegexp")) {
+                    idRegexp = reader.nextString();
+                } else if (name.equals("timeRegexp")) {
+                    timeRegexp = reader.nextString();
+                } else if (name.equals("message")) {
+                    message = reader.nextString();
+                } else if (name.equals("isLast")) {
+                    isLast = reader.nextString();
+                } else if (name.equals("weight")) {
+                    weight = reader.nextInt();
+                } else {
+                    Log.w(TAG, "Unknown ReturnMessage key: " + name);
+                    reader.skipValue();
+                }
+            }
+        }
     }
 
     /**
      * Strings to announce the depletion of the manifest and the impending departure
      */
-    private static class GoMessage {
+    static class GoMessage extends JsonSerializable {
+        private static final String DEFAULT_TIME_REGEXP = "";
+        private static final String DEFAULT_MESSAGE = "";
+        private static final int DEFAULT_WEIGHT = 10;
+
         public String timeRegexp;
         public String message;
         public int weight;
+
+        public GoMessage() {
+            timeRegexp = DEFAULT_TIME_REGEXP;
+            message = DEFAULT_MESSAGE;
+            weight = DEFAULT_WEIGHT;
+        }
+
+        @Override
+        public void writeJson(JsonWriter writer) throws IOException {
+            writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
+            writeValue(writer, "message", message, DEFAULT_MESSAGE);
+            writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
+        }
+
+        @Override
+        public void readJson(JsonReader reader) throws IOException {
+            while (reader.hasNext()) {
+                String name = reader.nextName();
+
+                if (name.equals("timeRegexp")) {
+                    timeRegexp = reader.nextString();
+                } else if (name.equals("message")) {
+                    message = reader.nextString();
+                } else if (name.equals("weight")) {
+                    weight = reader.nextInt();
+                } else {
+                    Log.w(TAG, "Unknown GoMessage key: " + name);
+                    reader.skipValue();
+                }
+            }
+        }
     }
 
-    private static List<WelcomeMessage> sWelcomeMessages;
-    private static List<ReturnMessage> sReturnMessages;
-    private static List<GoMessage> sGoMessages;
+    private List<WelcomeMessage> mWelcomeMessages;
+    private List<ReturnMessage> mReturnMessages;
+    private List<GoMessage> mGoMessages;
+
+    public static RiderMessages sInstance = new RiderMessages();
 
     /*
-     * The BusManMessages file is a list of lines in one of three forms:
-     *  w/timeRegexp/idRegexp/message/weight - a welcome message
-     *  r/timeRegexp/idRegexp/message/isLast/weight - a "returning" message
-     *  g/timeRegexp/message/weight - a "go" message
+     *  The BusManMessages file is a JSON file with three different lists: welcome messages,
+     *  returning messages, go messages.
      *
-     *  The first field disambiguates among the types of messages (w is welcome, etc.)
      *  timeRegexp is a regular expression to match against a time/date string in the default
      *  locale, of the form
      *          "Sun, Mar 23, 2014 14:07"
@@ -109,11 +255,11 @@ public class RiderMessages {
     /**
      * Look for MESSAGE_FILE. If found, read it in and populate the message arrays.
      */
-    public static void readMessages() {
-        final File messageFile = new File(getMessageFile());
+    public void readMessages() {
+        final File messageFile = new File(getJsonMessageFile());
         if (!messageFile.exists()) {
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                Log.v(TAG, "readMessages() - no file");
+                Log.v(TAG, "readMessages() - no JSON file");
             }
             resetMessages();
             return;
@@ -122,7 +268,7 @@ public class RiderMessages {
         if (sMessageFileLastModified == messageFileModDate) {
             // no need to re-read the file
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                Log.v(TAG, "readMessages() - file hasn't changed");
+                Log.v(TAG, "readMessages() - JSON file hasn't changed");
             }
             return;
         }
@@ -140,116 +286,99 @@ public class RiderMessages {
                     messageStream = new FileInputStream(messageFile);
                 } catch (FileNotFoundException e) {
                     if (Log.isLoggable(TAG, Log.DEBUG)) {
-                        Log.d(TAG, "Didn't find " + MESSAGE_FILE);
+                        Log.d(TAG, "Didn't find " + MESSAGE_JSON_FILE);
                     }
                     return null;
                 }
 
-                parseMessageStream(messageStream);
+                parseJsonStream(messageStream);
                 return null;
             }
 
         }.execute((Void) null);
     }
 
-    private static void parseMessageStream(InputStream messageStream) {
-        final BufferedReader messageReader =
-                new BufferedReader(new InputStreamReader(messageStream));
+    private void writeJson(JsonWriter writer) throws IOException {
+        writer.setIndent("  ");
+        writer.beginObject();
+        writer.name("welcomeMessages");
+        writeJsonArray(writer, mWelcomeMessages);
+        writer.name("returnMessages");
+        writeJsonArray(writer, mReturnMessages);
+        writer.name("goMessages");
+        writeJsonArray(writer, mGoMessages);
 
+        writer.endObject();
+    }
+
+    private void writeJsonArray(JsonWriter writer, List<? extends JsonSerializable> list) throws IOException {
+        writer.beginArray();
+        for (JsonSerializable object : list) {
+            writer.beginObject();
+            object.writeJson(writer);
+            writer.endObject();
+        }
+        writer.endArray();
+    }
+
+    private <T extends JsonSerializable> List<T> readJsonArray(JsonReader reader, Class<T> clazz) throws IOException {
+        List<T> result = new ArrayList<T>();
+
+        reader.beginArray();
+        while (reader.hasNext()) {
+            reader.beginObject();
+            T element = null;
+            try {
+                element = clazz.newInstance();
+                element.readJson(reader);
+                result.add(element);
+            } catch (Exception e) {
+                Log.e(TAG, "Error instantiating " + clazz.getName(), e);
+            }
+            reader.endObject();
+        }
+        reader.endArray();
+
+        return result;
+    }
+
+    @VisibleForTesting
+    void parseJsonStream(InputStream jsonStream) {
         resetMessages();
 
-        String line;
-        while (true) {
-            try {
-                line = messageReader.readLine();
-            } catch (IOException e) {
-                break;
-            }
-            if (line == null) {
-                break;
-            }
-            // trim leading spaces
-            line = line.replaceFirst("^\\s+", "");
-            // Skip empty or comment lines (first non-whitespace is a '#')
-            if ((line.length() == 0) || (line.matches("^#.*"))) {
-                continue;
-            }
-            final String fields[] = (line + " ").split("/");
-            // process a "welcome" message
-            if ("w".equals(fields[0])) {
-                if (fields.length != 5) {
-                    if (Log.isLoggable(TAG, Log.ERROR)) {
-                        Log.e(TAG, "invalid welcome message: needs 5 fields, has "
-                                + fields.length);
-                    }
-                    continue;
-                }
-                final WelcomeMessage message = new WelcomeMessage();
-                message.timeRegexp = getString(fields[1]);
-                message.idMatch = getString(fields[2]);
-                message.message = getString(fields[3]);
-                message.weight = getWeight(fields[4]);
-                sWelcomeMessages.add(message);
-
-                // process a "returning" message
-            } else if ("r".equals(fields[0])) {
-                if (fields.length != 6) {
-                    if (Log.isLoggable(TAG, Log.ERROR)) {
-                        Log.e(TAG, "invalid return message: needs 6 fields, has "
-                                + fields.length);
-                    }
-                    continue;
-                }
-                final ReturnMessage message = new ReturnMessage();
-                message.timeRegexp = getString(fields[1]);
-                message.idRegexp = getString(fields[2]);
-                message.message = getString(fields[3]);
-                message.isLast = getString(fields[4]);
-                message.weight = getWeight(fields[5]);
-                sReturnMessages.add(message);
-
-                // process a "go" message
-            } else if ("g".equals(fields[0])) {
-                if (fields.length != 4) {
-                    if (Log.isLoggable(TAG, Log.ERROR)) {
-                        Log.e(TAG, "invalid return message: needs 4 fields, has "
-                                + fields.length);
-                    }
-                    continue;
-                }
-                final GoMessage message = new GoMessage();
-                message.timeRegexp = getString(fields[1]);
-                message.message = getString(fields[2]);
-                message.weight = getWeight(fields[3]);
-                sGoMessages.add(message);
-
-                // unrecognized message type -- ignore it
-            } else {
-                if (Log.isLoggable(TAG, Log.WARN)) {
-                    Log.w(TAG, "unrecognized: " + line);
-                }
-            }
-        }
-
         try {
-            if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                Log.v(TAG, "readMessages() - closing");
+            JsonReader reader = new JsonReader(new InputStreamReader(jsonStream));
+            reader.beginObject();
+
+            while (reader.hasNext()) {
+                String name = reader.nextName();
+
+                if (name.equals("welcomeMessages")) {
+                    mWelcomeMessages = readJsonArray(reader, WelcomeMessage.class);
+                } else if (name.equals("returnMessages")) {
+                    mReturnMessages = readJsonArray(reader, ReturnMessage.class);
+                } else if (name.equals("goMessages")) {
+                    mGoMessages = readJsonArray(reader, GoMessage.class);
+                } else {
+                    Log.w(TAG, "Unknown top-level key " + name);
+                    reader.skipValue();
+                }
             }
-            messageStream.close();
+
+            reader.endObject();
+            reader.close();
         } catch (IOException e) {
-            if (Log.isLoggable(TAG, Log.ERROR)) {
-                Log.e(TAG, "Error while closing " + MESSAGE_FILE);
-            }
+            e.printStackTrace();
         }
     }
 
     /**
      * Empty the message lists.
      */
-    private static void resetMessages() {
-        sWelcomeMessages = new ArrayList<WelcomeMessage>();;
-        sReturnMessages = new ArrayList<ReturnMessage>();
-        sGoMessages = new ArrayList<GoMessage>();
+    private void resetMessages() {
+        mWelcomeMessages = new ArrayList<WelcomeMessage>();;
+        mReturnMessages = new ArrayList<ReturnMessage>();
+        mGoMessages = new ArrayList<GoMessage>();
     }
 
     /**
@@ -297,13 +426,13 @@ public class RiderMessages {
      * @param timeString the current time
      * @return a welcome string or null if there were none
      */
-    public static String getWelcomeString(final String rider, String timeString) {
+    public String getWelcomeString(final String rider, String timeString) {
         final ArrayList<CandidateMessage> candidates = new ArrayList<CandidateMessage>();
         int totalWeight = 0;
-        for (final WelcomeMessage message: sWelcomeMessages) {
-            final String idMatch = message.idMatch;
+        for (final WelcomeMessage message: mWelcomeMessages) {
+            final String idRegexp = message.idRegexp;
             final String timeRegexp = message.timeRegexp;
-            if ((!idMatch.isEmpty() && !rider.matches(idMatch))
+            if ((!idRegexp.isEmpty() && !rider.matches(idRegexp))
                     || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
                     || (message.message.equals(sLatestWelcomeString))) {
                 continue;
@@ -344,11 +473,11 @@ public class RiderMessages {
      * @param isLast - true if this rider's arrival emptied the manifest
      * @return a welcome back string or null if there were none
      */
-    public static String getReturnsString(final String rider, String timeString,
+    public String getReturnsString(final String rider, String timeString,
             final boolean isLast) {
         final ArrayList<CandidateMessage> candidates = new ArrayList<CandidateMessage>();
         int totalWeight = 0;
-        for (final ReturnMessage message: sReturnMessages) {
+        for (final ReturnMessage message: mReturnMessages) {
             final String idRegexp = message.idRegexp;
             final String timeRegexp = message.timeRegexp;
             final String messageIsLast = message.isLast;
@@ -371,10 +500,10 @@ public class RiderMessages {
      * @param timeString - the current time
      * @return a "time to go" string or null if there were none
      */
-    public static String getGoString(String timeString) {
+    public String getGoString(String timeString) {
         final ArrayList<CandidateMessage> candidates = new ArrayList<CandidateMessage>();
         int totalWeight = 0;
-        for (final GoMessage message: sGoMessages) {
+        for (final GoMessage message: mGoMessages) {
             final String timeRegexp = message.timeRegexp;
             if (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp)) {
                 continue;
@@ -396,6 +525,34 @@ public class RiderMessages {
             }
             sInitializedDirs = true;
         }
-        return MESSAGE_FILE;
+        return MESSAGE_JSON_FILE;
+    }
+
+    public static String getJsonMessageFile() {
+        if (!sInitializedDirs) {
+            if (!DATA_DIR.exists()) {
+                DATA_DIR.mkdirs();
+            }
+            if (!DOWNLOAD_DIR.exists()) {
+                DOWNLOAD_DIR.mkdirs();
+            }
+            sInitializedDirs = true;
+        }
+        return MESSAGE_JSON_FILE;
+    }
+
+    @VisibleForTesting
+    List<WelcomeMessage> getWelcomeMessages() {
+        return mWelcomeMessages;
+    }
+
+    @VisibleForTesting
+    List<ReturnMessage> getReturnMessages() {
+        return mReturnMessages;
+    }
+
+    @VisibleForTesting
+    List<GoMessage> getGoMessages() {
+        return mGoMessages;
     }
 }

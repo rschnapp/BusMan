@@ -118,4 +118,5 @@ limitations under the License.</string>
 
     <string name="who_are_you">You are not on the list, <xliff:g>%s</xliff:g></string>
     <string name="deja_vu">You are already on the list, <xliff:g>%s</xliff:g></string>
+    <string name="bad_rider_id">This name doesn\'t match the expected format. It should have the name in [square brackets].</string>
 </resources>

@@ -45,6 +45,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -159,18 +160,23 @@ public class ManifestActivity extends ListActivity {
                 final int status = cursor.getInt(statusIndex);
                 final int reasonIndex = cursor.getColumnIndex(DownloadManager.COLUMN_REASON);
                 final int reason = cursor.getInt(reasonIndex);
+                final int localFilenameIndex =
+                        cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_FILENAME);
+                final String localFilename = cursor.getString(localFilenameIndex);
                 if (status == DownloadManager.STATUS_SUCCESSFUL) {
                     Log.i(TAG, "messages download succeeded");
-                    new File(RiderMessages.MESSAGE_FILE_OLD).delete();
-                    new File(RiderMessages.MESSAGE_FILE)
-                            .renameTo(new File(RiderMessages.MESSAGE_FILE_OLD));
-                    final File downloadFile = new File(RiderMessages.DOWNLOAD_MESSAGE_FILE);
+                    String oldName = RiderMessages.MESSAGE_JSON_FILE_OLD;
+                    String newName = RiderMessages.MESSAGE_JSON_FILE;
+
+                    new File(oldName).delete();
+                    new File(newName).renameTo(new File(oldName));
+                    final File downloadFile = new File(localFilename);
                     FileInputStream inStream;
                     FileOutputStream outStream;
                     try {
                         inStream =
                                 new FileInputStream(downloadFile);
-                        outStream = new FileOutputStream(new File(RiderMessages.MESSAGE_FILE));
+                        outStream = new FileOutputStream(new File(newName));
                     } catch (FileNotFoundException e) {
                         Log.w(TAG, "failed to create files while copying downloaded messages: " +
                                 e);
@@ -193,7 +199,7 @@ public class ManifestActivity extends ListActivity {
                     prefs.edit().putLong(SettingsActivity.PREF_MESSAGES_LAST_POLLED,
                             System.currentTimeMillis()).commit();
 
-                    RiderMessages.readMessages();
+                    RiderMessages.sInstance.readMessages();
                 } else {
                     if (status == DownloadManager.STATUS_FAILED) {
                         Log.w(TAG, "messages download failed, error " + reason);
@@ -460,14 +466,20 @@ public class ManifestActivity extends ListActivity {
 
             case R.id.option_add_rider:
                 final View riderView = LayoutInflater.from(this).inflate(R.layout.add_rider, null);
-                final EditText riderName = (EditText)riderView.findViewById(R.id.rider_text);
+                final EditText riderNameView = (EditText)riderView.findViewById(R.id.rider_text);
 
                 new AlertDialog.Builder(this)
                     .setTitle(R.string.item_add_rider)
                     .setView(riderView)
                     .setPositiveButton(R.string.add_button, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            recordNewRider(true, riderName.getText().toString());
+                            String riderName = riderNameView.getText().toString();
+                            // Validate the name and warn the user if it's incorrect.
+                            if (id(riderName) == null) {
+                                Toast.makeText(ManifestActivity.this,
+                                        R.string.bad_rider_id, Toast.LENGTH_LONG).show();
+                            }
+                            recordNewRider(true, riderName);
                         }
                     })
                     .setNegativeButton(android.R.string.cancel, null).create().show();
@@ -584,10 +596,16 @@ public class ManifestActivity extends ListActivity {
 
     /**
      * @param rider - String in form "rider's name [rider's id]"
-     * @return rider's id
+     * @return rider's id, or null if the string is not in the expected format
      */
     private static String id(final String rider) {
-        return rider.substring(rider.indexOf('[') + 1, rider.indexOf(']'));
+        int openBracePos = rider.indexOf('[');
+        int closeBracePos = rider.indexOf(']');
+
+        if (openBracePos == -1 || closeBracePos <= openBracePos + 1) {
+            return null;
+        }
+        return rider.substring(openBracePos + 1, closeBracePos);
     }
 
     private void sayRightNow(String phrase) {
@@ -694,7 +712,7 @@ public class ManifestActivity extends ListActivity {
 
     private void timeToGo() {
         mTts.playSilence(500, TextToSpeech.QUEUE_ADD, null);
-        String goString = RiderMessages.getGoString(RiderMessages.timeString());
+        String goString = RiderMessages.sInstance.getGoString(RiderMessages.timeString());
         sayQueued(goString != null ? goString : getRandomResGo());
     }
 
@@ -704,7 +722,11 @@ public class ManifestActivity extends ListActivity {
     }
 
     private String getWelcomeString(final String rider) {
-        final String welcomeString = RiderMessages.getWelcomeString(id(rider),
+        final String riderId = id(rider);
+        if (riderId == null) {
+            return getRandomResWelcome();
+        }
+        final String welcomeString = RiderMessages.sInstance.getWelcomeString(id(rider),
                 RiderMessages.timeString());
         return welcomeString != null ? welcomeString : getRandomResWelcome();
     }
@@ -714,7 +736,11 @@ public class ManifestActivity extends ListActivity {
     }
 
     private String getReturnsString(final String rider, final boolean isLast) {
-        final String returnsString = RiderMessages.getReturnsString(id(rider),
+        final String riderId = id(rider);
+        if (riderId == null) {
+            return getRandomResReturn();
+        }
+        final String returnsString = RiderMessages.sInstance.getReturnsString(id(rider),
                 RiderMessages.timeString(), isLast);
         return returnsString != null ? returnsString : getRandomResReturn();
     }
@@ -767,7 +793,7 @@ public class ManifestActivity extends ListActivity {
 
     private void loadMessages() {
         // load the existing messages file, if any
-        RiderMessages.readMessages();
+        RiderMessages.sInstance.readMessages();
 
         /**
          *  if we have a messages_url
@@ -801,7 +827,7 @@ public class ManifestActivity extends ListActivity {
         // Construct a DownloadManager.Request to retrieve the messages file
         final DownloadManager.Request request = new DownloadManager.Request(Uri.parse(messagesUrl))
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
-                        RiderMessages.MESSAGE_FILE_NAME)
+                        RiderMessages.MESSAGE_JSON_FILE_NAME)
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
                 .setMimeType("text/plain");
 
