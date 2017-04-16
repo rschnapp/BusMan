@@ -99,6 +99,8 @@ limitations under the License.</string>
         <item>Hey, <xliff:g>%s</xliff:g>, nice to see you!</item>
         </string-array>
 
+    <string name="already_welcomed">You are already on the list, <xliff:g>%s</xliff:g></string>
+
     <string-array name="returns">
         <item>welcome back, <xliff:g>%s</xliff:g></item>
         <item>heading home, <xliff:g>%s</xliff:g></item>
@@ -109,14 +111,14 @@ limitations under the License.</string>
         <item>hey, <xliff:g>%s</xliff:g> is back!</item>
         </string-array>
 
-    <string-array name="time_to_go">
+    <string name="already_returned">You are not on the list, <xliff:g>%s</xliff:g></string>
+
+    <string-array name="go">
         <item>Hooray! We\'re all aboard. Time to go!</item>
         <item>It is go, go, go time!</item>
         <item>Everyone is aboard. Let\'s boogie!</item>
         <item>All aboard! It\'s time to head for home!</item>
     </string-array>
 
-    <string name="who_are_you">You are not on the list, <xliff:g>%s</xliff:g></string>
-    <string name="deja_vu">You are already on the list, <xliff:g>%s</xliff:g></string>
     <string name="bad_rider_id">This name doesn\'t match the expected format. It should have the name in [square brackets].</string>
 </resources>

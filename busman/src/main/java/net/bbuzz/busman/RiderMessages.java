@@ -7,13 +7,9 @@ import android.util.JsonReader;
 import android.util.JsonWriter;
 import android.util.Log;
 
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,39 +23,39 @@ public class RiderMessages {
 
     private final static String TAG =  "RiderMessages";
 
-    public final static String MESSAGE_JSON_FILE_NAME = "BusManMessages.json";
+    final static String MESSAGE_JSON_FILE_NAME = "BusManMessages.json";
 
-    public final static File DOWNLOAD_DIR =
+    private final static File DOWNLOAD_DIR =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
     public final static String DOWNLOAD_MESSAGE_FILE = new File(DOWNLOAD_DIR,
             MESSAGE_JSON_FILE_NAME).getAbsolutePath();
 
-    public final static File DATA_DIR =
+    private final static File DATA_DIR =
             new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/BusMan");
-    public final static String MESSAGE_JSON_FILE =
+    final static String MESSAGE_JSON_FILE =
             new File(DATA_DIR, MESSAGE_JSON_FILE_NAME).getAbsolutePath();
-    public final static String MESSAGE_JSON_FILE_OLD =
+    final static String MESSAGE_JSON_FILE_OLD =
             new File(DATA_DIR, MESSAGE_JSON_FILE_NAME + ".old").getAbsolutePath();
 
-    public final static int DEFAULT_WEIGHT = 10;
+    final static int DEFAULT_WEIGHT = 10;
     // SimpleDateFormat e.g., "Sun, Mar 23, 2014 14:07"
-    public final static SimpleDateFormat DATE_FORMAT =
+    private final static SimpleDateFormat DATE_FORMAT =
             new SimpleDateFormat("EEE, MMM dd, yyyy HH:mm");
     private static final Random sRandom = new Random();
 
-    public static abstract class JsonSerializable {
+    static abstract class JsonSerializable {
         public abstract void writeJson(JsonWriter writer) throws IOException;
 
         public abstract void readJson(JsonReader reader) throws IOException;
 
-        protected void writeValue(JsonWriter writer, String name, String value, String defaultValue)
+        void writeValue(JsonWriter writer, String name, String value, String defaultValue)
                 throws IOException {
             if (!value.equals(defaultValue)) {
                 writer.name(name).value(value);
             }
         }
 
-        protected void writeValue(JsonWriter writer, String name, int value, int defaultValue)
+        void writeValue(JsonWriter writer, String name, int value, int defaultValue)
                 throws IOException {
             if (value != defaultValue) {
                 writer.name(name).value(value);
@@ -76,10 +72,10 @@ public class RiderMessages {
         private static final String DEFAULT_MESSAGE = "";
         private static final int DEFAULT_WEIGHT = 10;
 
-        public String idRegexp;
-        public String timeRegexp;
-        public String message;
-        public int weight;
+        String idRegexp;
+        String timeRegexp;
+        String message;
+        int weight;
 
 
         public WelcomeMessage() {
@@ -102,19 +98,25 @@ public class RiderMessages {
             while (reader.hasNext()) {
                 String name = reader.nextName();
 
-                if (name.equals("idRegexp")) {
-                    idRegexp = reader.nextString();
-                } else if (name.equals("timeRegexp")) {
-                    timeRegexp = reader.nextString();
-                } else if (name.equals("message")) {
-                    message = reader.nextString();
-                } else if (name.equals("weight")) {
-                    weight = reader.nextInt();
-                } else {
-                    if (Log.isLoggable(TAG, Log.WARN)) {
-                        Log.w(TAG, "Unknown WelcomeMessage key: " + name);
-                    }
-                    reader.skipValue();
+                switch (name) {
+                    case "idRegexp":
+                        idRegexp = reader.nextString();
+                        break;
+                    case "timeRegexp":
+                        timeRegexp = reader.nextString();
+                        break;
+                    case "message":
+                        message = reader.nextString();
+                        break;
+                    case "weight":
+                        weight = reader.nextInt();
+                        break;
+                    default:
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "Unknown WelcomeMessage key: " + name);
+                        }
+                        reader.skipValue();
+                        break;
                 }
             }
         }
@@ -130,11 +132,11 @@ public class RiderMessages {
         private static final String DEFAULT_ISLAST = "";
         private static final int DEFAULT_WEIGHT = 10;
 
-        public String idRegexp;
-        public String timeRegexp;
-        public String message;
-        public String isLast;
-        public int weight;
+        String idRegexp;
+        String timeRegexp;
+        String message;
+        String isLast;
+        int weight;
 
         public ReturnMessage() {
             idRegexp = DEFAULT_ID_REGEXP;
@@ -149,7 +151,7 @@ public class RiderMessages {
             writeValue(writer, "idRegexp", idRegexp, DEFAULT_ID_REGEXP);
             writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
             writeValue(writer, "message", message, DEFAULT_MESSAGE);
-            writeValue(writer, "isLast", isLast, DEFAULT_ISLAST);
+            writeValue(writer, "dejaVu", isLast, DEFAULT_ISLAST);
             writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
         }
 
@@ -158,21 +160,93 @@ public class RiderMessages {
             while (reader.hasNext()) {
                 String name = reader.nextName();
 
-                if (name.equals("idRegexp")) {
-                    idRegexp = reader.nextString();
-                } else if (name.equals("timeRegexp")) {
-                    timeRegexp = reader.nextString();
-                } else if (name.equals("message")) {
-                    message = reader.nextString();
-                } else if (name.equals("isLast")) {
-                    isLast = reader.nextString();
-                } else if (name.equals("weight")) {
-                    weight = reader.nextInt();
-                } else {
-                    if (Log.isLoggable(TAG, Log.WARN)) {
-                        Log.w(TAG, "Unknown ReturnMessage key: " + name);
-                    }
-                    reader.skipValue();
+                switch (name) {
+                    case "idRegexp":
+                        idRegexp = reader.nextString();
+                        break;
+                    case "timeRegexp":
+                        timeRegexp = reader.nextString();
+                        break;
+                    case "message":
+                        message = reader.nextString();
+                        break;
+                    case "isLast":
+                        isLast = reader.nextString();
+                        break;
+                    case "weight":
+                        weight = reader.nextInt();
+                        break;
+                    default:
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "Unknown ReturnMessage key: " + name);
+                        }
+                        reader.skipValue();
+                        break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Announce the attempted removal of a rider who is not in the manifest
+     */
+    static class AlreadyReturnedMessage extends JsonSerializable {
+        private static final String DEFAULT_ID_REGEXP = "";
+        private static final String DEFAULT_TIME_REGEXP = "";
+        private static final String DEFAULT_MESSAGE = "";
+        private static final String DEFAULT_DEJAVU = "";
+        private static final int DEFAULT_WEIGHT = 10;
+
+        String idRegexp;
+        String timeRegexp;
+        String message;
+        String dejaVu;  // "t" means we did recently remove this rider, so this is a stutter
+        int weight;
+
+        public AlreadyReturnedMessage() {
+            idRegexp = DEFAULT_ID_REGEXP;
+            timeRegexp = DEFAULT_TIME_REGEXP;
+            message = DEFAULT_MESSAGE;
+            dejaVu = DEFAULT_DEJAVU;
+            weight = DEFAULT_WEIGHT;
+        }
+
+        @Override
+        public void writeJson(JsonWriter writer) throws IOException {
+            writeValue(writer, "idRegexp", idRegexp, DEFAULT_ID_REGEXP);
+            writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
+            writeValue(writer, "message", message, DEFAULT_MESSAGE);
+            writeValue(writer, "dejaVu", dejaVu, DEFAULT_DEJAVU);
+            writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
+        }
+
+        @Override
+        public void readJson(JsonReader reader) throws IOException {
+            while (reader.hasNext()) {
+                String name = reader.nextName();
+
+                switch (name) {
+                    case "idRegexp":
+                        idRegexp = reader.nextString();
+                        break;
+                    case "timeRegexp":
+                        timeRegexp = reader.nextString();
+                        break;
+                    case "message":
+                        message = reader.nextString();
+                        break;
+                    case "dejaVu":
+                        dejaVu = reader.nextString();
+                        break;
+                    case "weight":
+                        weight = reader.nextInt();
+                        break;
+                    default:
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "Unknown ReturnMessage key: " + name);
+                        }
+                        reader.skipValue();
+                        break;
                 }
             }
         }
@@ -186,9 +260,9 @@ public class RiderMessages {
         private static final String DEFAULT_MESSAGE = "";
         private static final int DEFAULT_WEIGHT = 10;
 
-        public String timeRegexp;
-        public String message;
-        public int weight;
+        String timeRegexp;
+        String message;
+        int weight;
 
         public GoMessage() {
             timeRegexp = DEFAULT_TIME_REGEXP;
@@ -208,27 +282,34 @@ public class RiderMessages {
             while (reader.hasNext()) {
                 String name = reader.nextName();
 
-                if (name.equals("timeRegexp")) {
-                    timeRegexp = reader.nextString();
-                } else if (name.equals("message")) {
-                    message = reader.nextString();
-                } else if (name.equals("weight")) {
-                    weight = reader.nextInt();
-                } else {
-                    if (Log.isLoggable(TAG, Log.WARN)) {
-                        Log.w(TAG, "Unknown GoMessage key: " + name);
-                    }
-                    reader.skipValue();
+                switch (name) {
+                    case "timeRegexp":
+                        timeRegexp = reader.nextString();
+                        break;
+                    case "message":
+                        message = reader.nextString();
+                        break;
+                    case "weight":
+                        weight = reader.nextInt();
+                        break;
+                    default:
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "Unknown GoMessage key: " + name);
+                        }
+                        reader.skipValue();
+                        break;
                 }
             }
         }
     }
 
     private List<WelcomeMessage> mWelcomeMessages;
+    private List<WelcomeMessage> mAlreadyWelcomedMessages;
     private List<ReturnMessage> mReturnMessages;
+    private List<AlreadyReturnedMessage> mAlreadyReturnedMessages;
     private List<GoMessage> mGoMessages;
 
-    public static RiderMessages sInstance = new RiderMessages();
+    static RiderMessages sInstance = new RiderMessages();
 
     /*
      *  The BusManMessages file is a JSON file with three different lists: welcome messages,
@@ -237,16 +318,16 @@ public class RiderMessages {
      *  timeRegexp is a regular expression to match against a time/date string in the default
      *  locale, of the form
      *          "Sun, Mar 23, 2014 14:07"
-     *          example: ex: ".*Apr 01.*" matches April first
+     *          example: ex: ".*Apr 01,.*" matches April first
      *          (empty matches all)
      *  idRegexp is a regular expression to match against a rider id, or empty to match all riders
      *  message is the string, which can contain:
-     *          "%s" will be replaced with the rider's name
+     *          "%s" will be replaced with the rider's name (one instance)
      *          "!locale(language)" can appear anywhere in the message. It will be deleted from the
      *              message, and the language (an ISO locale spec) will be passed to the TTS engine,
      *              e.g., "!locale(en_GB)"
-     *  isLast is either "t", signifying that this matches a returning rider who is the last rider;
-     *          "f" signifies someone who is NOT the last rider; and empty matches all
+     *  dejaVu is either "t", signifying that this matches a recently removed rider;
+     *          "f" signifies someone who is NOT recognized at all; and empty matches all
      *  weight is the selection weight. Among all matching messages, a message's weight divided by
      *          the sum of all matching messages' weights represents the probability that a given
      *          message will be selected. If weight is empty, it defaults to a value of 10.
@@ -254,14 +335,14 @@ public class RiderMessages {
      *  NOTE: empty lines, and lines beginning with "#" are ignored
      */
 
-    static long sMessageFileLastModified = 0L;
+    private static long sMessageFileLastModified = 0L;
 
-    static boolean sInitializedDirs;
+    private static boolean sInitializedDirs;
 
     /**
      * Look for MESSAGE_FILE. If found, read it in and populate the message arrays.
      */
-    public void readMessages() {
+    void readMessages() {
         final File messageFile = new File(getJsonMessageFile());
         if (!messageFile.exists()) {
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
@@ -304,36 +385,14 @@ public class RiderMessages {
         }.execute((Void) null);
     }
 
-    private void writeJson(JsonWriter writer) throws IOException {
-        writer.setIndent("  ");
-        writer.beginObject();
-        writer.name("welcomeMessages");
-        writeJsonArray(writer, mWelcomeMessages);
-        writer.name("returnMessages");
-        writeJsonArray(writer, mReturnMessages);
-        writer.name("goMessages");
-        writeJsonArray(writer, mGoMessages);
-
-        writer.endObject();
-    }
-
-    private void writeJsonArray(JsonWriter writer, List<? extends JsonSerializable> list) throws IOException {
-        writer.beginArray();
-        for (JsonSerializable object : list) {
-            writer.beginObject();
-            object.writeJson(writer);
-            writer.endObject();
-        }
-        writer.endArray();
-    }
-
-    private <T extends JsonSerializable> List<T> readJsonArray(JsonReader reader, Class<T> clazz) throws IOException {
-        List<T> result = new ArrayList<T>();
+    private <T extends JsonSerializable> List<T> readJsonArray(JsonReader reader, Class<T> clazz)
+            throws IOException {
+        List<T> result = new ArrayList<>();
 
         reader.beginArray();
         while (reader.hasNext()) {
             reader.beginObject();
-            T element = null;
+            T element;
             try {
                 element = clazz.newInstance();
                 element.readJson(reader);
@@ -355,23 +414,35 @@ public class RiderMessages {
         resetMessages();
 
         try {
-            JsonReader reader = new JsonReader(new InputStreamReader(jsonStream));
+            final JsonReader reader = new JsonReader(new InputStreamReader(jsonStream));
             reader.beginObject();
 
             while (reader.hasNext()) {
                 String name = reader.nextName();
 
-                if (name.equals("welcomeMessages")) {
-                    mWelcomeMessages = readJsonArray(reader, WelcomeMessage.class);
-                } else if (name.equals("returnMessages")) {
-                    mReturnMessages = readJsonArray(reader, ReturnMessage.class);
-                } else if (name.equals("goMessages")) {
-                    mGoMessages = readJsonArray(reader, GoMessage.class);
-                } else {
-                    if (Log.isLoggable(TAG, Log.WARN)) {
-                        Log.w(TAG, "Unknown top-level key " + name);
-                    }
-                    reader.skipValue();
+                switch (name) {
+                    case "welcomeMessages":
+                        mWelcomeMessages = readJsonArray(reader, WelcomeMessage.class);
+                        break;
+                    case "alreadyWelcomedMessages":
+                        mAlreadyWelcomedMessages = readJsonArray(reader, WelcomeMessage.class);
+                        break;
+                    case "returnMessages":
+                        mReturnMessages = readJsonArray(reader, ReturnMessage.class);
+                        break;
+                    case "alreadyReturnedMessages":
+                        mAlreadyReturnedMessages = readJsonArray(reader,
+                                AlreadyReturnedMessage.class);
+                        break;
+                    case "goMessages":
+                        mGoMessages = readJsonArray(reader, GoMessage.class);
+                        break;
+                    default:
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "Unknown top-level key " + name);
+                        }
+                        reader.skipValue();
+                        break;
                 }
             }
 
@@ -386,36 +457,14 @@ public class RiderMessages {
      * Empty the message lists.
      */
     private void resetMessages() {
-        mWelcomeMessages = new ArrayList<WelcomeMessage>();;
-        mReturnMessages = new ArrayList<ReturnMessage>();
-        mGoMessages = new ArrayList<GoMessage>();
+        mWelcomeMessages = new ArrayList<>();
+        mAlreadyWelcomedMessages = new ArrayList<>();
+        mReturnMessages = new ArrayList<>();
+        mAlreadyReturnedMessages = new ArrayList<>();
+        mGoMessages = new ArrayList<>();
     }
 
-    /**
-     * @return rawFieldString with any leading or trailing whitespace removed
-     */
-    private static String getString(final String rawFieldString) {
-        return rawFieldString.replaceAll("^\\s+|\\s+$", "");
-    }
-
-    private static int getWeight(final String weightString) {
-        final String trimmed = getString(weightString);
-        if (trimmed.length() == 0) {
-            return DEFAULT_WEIGHT;
-        }
-        int result;
-        try {
-            result = Integer.parseInt(trimmed);
-        } catch (final NumberFormatException e) {
-            if (Log.isLoggable(TAG, Log.ERROR)) {
-                Log.e(TAG, "invalid weight: " + trimmed);
-            }
-            result = DEFAULT_WEIGHT;
-        }
-        return result;
-    }
-
-    public static String timeString() {
+    static String timeString() {
         final long now = System.currentTimeMillis();
         return RiderMessages.DATE_FORMAT.format(new Date(now));
     }
@@ -424,22 +473,23 @@ public class RiderMessages {
         final String message;
         final int weight;
 
-        public CandidateMessage(final String message, final int weight) {
+        CandidateMessage(final String message, final int weight) {
             this.message = message;
             this.weight = weight;
         }
     }
 
     private static String sLatestWelcomeString;
+
     /**
      * @param rider - a rider id
-     * @param timeString the current time
      * @return a welcome string or null if there were none
      */
-    public String getWelcomeString(final String rider, String timeString) {
-        final ArrayList<CandidateMessage> candidates = new ArrayList<CandidateMessage>();
+    private String getWelcomeString(final String rider, List<WelcomeMessage> welcomeMessages) {
+        final ArrayList<CandidateMessage> candidates = new ArrayList<>();
+        final String timeString = timeString();
         int totalWeight = 0;
-        for (final WelcomeMessage message: mWelcomeMessages) {
+        for (final WelcomeMessage message: welcomeMessages) {
             final String idRegexp = message.idRegexp;
             final String timeRegexp = message.timeRegexp;
             if ((!idRegexp.isEmpty() && !rider.matches(idRegexp))
@@ -453,6 +503,22 @@ public class RiderMessages {
 
         sLatestWelcomeString =  selectMessage(candidates, totalWeight);
         return sLatestWelcomeString;
+    }
+
+    /**
+     * @param rider - a rider id
+     * @return a welcome string or null if there were none
+     */
+    String getWelcomeString(final String rider) {
+        return getWelcomeString(rider, mWelcomeMessages);
+    }
+
+    /**
+     * @param rider - a rider id
+     * @return a "not on the list" string or null if there were none
+     */
+    String getAlreadyWelcomedString(final String rider) {
+        return getWelcomeString(rider, mAlreadyWelcomedMessages);
     }
 
     /**
@@ -477,15 +543,15 @@ public class RiderMessages {
     }
 
     private static String sLatestReturnsString;
+
     /**
      * @param rider - a rider id
-     * @param timeString - the current time
      * @param isLast - true if this rider's arrival emptied the manifest
      * @return a welcome back string or null if there were none
      */
-    public String getReturnsString(final String rider, String timeString,
-            final boolean isLast) {
-        final ArrayList<CandidateMessage> candidates = new ArrayList<CandidateMessage>();
+    String getReturnsString(final String rider, final boolean isLast) {
+        final ArrayList<CandidateMessage> candidates = new ArrayList<>();
+        final String timeString = timeString();
         int totalWeight = 0;
         for (final ReturnMessage message: mReturnMessages) {
             final String idRegexp = message.idRegexp;
@@ -506,11 +572,40 @@ public class RiderMessages {
         return sLatestReturnsString;
     }
 
+    private static String sLatestAlreadyReturnedString;
+
+    /**
+     * @param rider - a rider id
+     * @return a welcome back string or null if there were none
+     */
+    String getAlreadyReturnedString(final String rider, boolean alreadyRemoved) {
+        final ArrayList<CandidateMessage> candidates = new ArrayList<>();
+        final String timeString = timeString();
+        int totalWeight = 0;
+        for (final AlreadyReturnedMessage message: mAlreadyReturnedMessages) {
+            final String idRegexp = message.idRegexp;
+            final String timeRegexp = message.timeRegexp;
+            final String messageIsDejaVu = message.dejaVu;
+            final String dejaVu = alreadyRemoved ? "t" : "f";
+            if ((!idRegexp.isEmpty() && !rider.matches(idRegexp))
+                    || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
+                    || (!messageIsDejaVu.isEmpty() && !dejaVu.equals(messageIsDejaVu))
+                    || (message.message.equals(sLatestAlreadyReturnedString))) {
+                continue;
+            }
+            totalWeight += message.weight;
+            candidates.add(new CandidateMessage(message.message, totalWeight));
+        }
+
+        sLatestAlreadyReturnedString = selectMessage(candidates, totalWeight);
+        return sLatestAlreadyReturnedString;
+    }
+
     /**
      * @param timeString - the current time
      * @return a "time to go" string or null if there were none
      */
-    public String getGoString(String timeString) {
+    String getGoString(String timeString) {
         final ArrayList<CandidateMessage> candidates = new ArrayList<CandidateMessage>();
         int totalWeight = 0;
         for (final GoMessage message: mGoMessages) {
@@ -538,7 +633,7 @@ public class RiderMessages {
         return MESSAGE_JSON_FILE;
     }
 
-    public static String getJsonMessageFile() {
+    private static String getJsonMessageFile() {
         if (!sInitializedDirs) {
             if (!DATA_DIR.exists()) {
                 DATA_DIR.mkdirs();
@@ -557,8 +652,18 @@ public class RiderMessages {
     }
 
     @VisibleForTesting
+    List<WelcomeMessage> getAlreadyWelcomedMessages() {
+        return mAlreadyWelcomedMessages;
+    }
+
+    @VisibleForTesting
     List<ReturnMessage> getReturnMessages() {
         return mReturnMessages;
+    }
+
+    @VisibleForTesting
+    List<AlreadyReturnedMessage> getAlreadyReturnedMessages() {
+        return mAlreadyReturnedMessages;
     }
 
     @VisibleForTesting

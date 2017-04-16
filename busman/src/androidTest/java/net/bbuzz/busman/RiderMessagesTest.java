@@ -16,8 +16,8 @@ import java.net.URL;
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class RiderMessagesTest {
+    //TODO: Add message functionality tests
     private RiderMessages riderMessages;
-
 
     @Before
     public void setUp() {
@@ -33,12 +33,12 @@ public class RiderMessagesTest {
         assertEquals(2, riderMessages.getWelcomeMessages().size());
         RiderMessages.WelcomeMessage welcomeMessage = riderMessages.getWelcomeMessages().get(0);
         assertEquals(".*Mar 17.*", welcomeMessage.timeRegexp);
-        assertEquals("Top of the morning to you, %s!", welcomeMessage.message);
+        assertEquals("Happy Saint Patrick's Day to you, %s!", welcomeMessage.message);
         assertEquals(25, welcomeMessage.weight);
 
         welcomeMessage = riderMessages.getWelcomeMessages().get(1);
         assertEquals("", welcomeMessage.timeRegexp);
-        assertEquals("hi %s", welcomeMessage.message);
+        assertEquals("Hi %s", welcomeMessage.message);
         assertEquals(RiderMessages.DEFAULT_WEIGHT, welcomeMessage.weight);
 
         assertEquals(2, riderMessages.getReturnMessages().size());
