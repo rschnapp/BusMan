@@ -486,6 +486,9 @@ public class RiderMessages {
      * @return a welcome string or null if there were none
      */
     private String getWelcomeString(final String rider, List<WelcomeMessage> welcomeMessages) {
+        if (welcomeMessages == null) {
+            return null;
+        }
         final ArrayList<CandidateMessage> candidates = new ArrayList<>();
         final String timeString = timeString();
         int totalWeight = 0;
@@ -550,6 +553,9 @@ public class RiderMessages {
      * @return a welcome back string or null if there were none
      */
     String getReturnsString(final String rider, final boolean isLast) {
+        if (mReturnMessages == null) {
+            return null;
+        }
         final ArrayList<CandidateMessage> candidates = new ArrayList<>();
         final String timeString = timeString();
         int totalWeight = 0;
@@ -579,6 +585,9 @@ public class RiderMessages {
      * @return a welcome back string or null if there were none
      */
     String getAlreadyReturnedString(final String rider, boolean alreadyRemoved) {
+        if (mAlreadyReturnedMessages == null) {
+            return null;
+        }
         final ArrayList<CandidateMessage> candidates = new ArrayList<>();
         final String timeString = timeString();
         int totalWeight = 0;

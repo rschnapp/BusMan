@@ -741,8 +741,7 @@ public class ManifestActivity extends ListActivity {
         if (riderId == null) {
             return getRandomResWelcome();
         }
-        final String welcomeString = RiderMessages.sInstance.getWelcomeString(id(rider)
-        );
+        final String welcomeString = RiderMessages.sInstance.getWelcomeString(id(rider));
         return welcomeString != null ? welcomeString : getRandomResWelcome();
     }
 
