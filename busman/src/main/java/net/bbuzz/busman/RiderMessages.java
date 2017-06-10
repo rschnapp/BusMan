@@ -351,7 +351,7 @@ public class RiderMessages {
         final File messageFile = new File(messageFileName);
         if (!messageFile.exists()) {
             final String msgNoFile = context.getString(R.string.didnt_find_file, messageFileName);
-            Toast.makeText(context, msgNoFile, Toast.LENGTH_LONG);
+            Toast.makeText(context, msgNoFile, Toast.LENGTH_LONG).show();
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
                 Log.v(TAG, "readMessages() - no JSON file");
             }
