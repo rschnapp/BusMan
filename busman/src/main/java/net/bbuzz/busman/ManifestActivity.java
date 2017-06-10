@@ -168,6 +168,8 @@ public class ManifestActivity extends ListActivity {
                     if (Log.isLoggable(TAG, Log.INFO)) {
                         Log.i(TAG, "messages download succeeded");
                     }
+                    Toast.makeText(context, R.string.messages_download_succeeded,
+                            Toast.LENGTH_SHORT).show();
                     String oldName = RiderMessages.MESSAGE_JSON_FILE_OLD;
                     String newName = RiderMessages.MESSAGE_JSON_FILE;
 
@@ -206,7 +208,7 @@ public class ManifestActivity extends ListActivity {
                     prefs.edit().putLong(SettingsActivity.PREF_MESSAGES_LAST_POLLED,
                             System.currentTimeMillis()).commit();
 
-                    RiderMessages.sInstance.readMessages();
+                    RiderMessages.sInstance.readMessages(context);
                 } else {
                     if (Log.isLoggable(TAG, Log.WARN)) {
                         if (status == DownloadManager.STATUS_FAILED) {
@@ -804,7 +806,7 @@ public class ManifestActivity extends ListActivity {
 
     private void loadMessages() {
         // load the existing messages file, if any
-        RiderMessages.sInstance.readMessages();
+        RiderMessages.sInstance.readMessages(this);
 
         /*
          *  if we have a messages_url

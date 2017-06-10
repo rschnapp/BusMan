@@ -1,11 +1,14 @@
 package net.bbuzz.busman;
 
+import android.content.Context;
+import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.annotation.VisibleForTesting;
 import android.util.JsonReader;
 import android.util.JsonWriter;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -341,10 +344,14 @@ public class RiderMessages {
 
     /**
      * Look for MESSAGE_FILE. If found, read it in and populate the message arrays.
+     * @param context
      */
-    void readMessages() {
-        final File messageFile = new File(getJsonMessageFile());
+    void readMessages(final Context context) {
+        final String messageFileName = getJsonMessageFile();
+        final File messageFile = new File(messageFileName);
         if (!messageFile.exists()) {
+            final String msgNoFile = context.getString(R.string.didnt_find_file, messageFileName);
+            Toast.makeText(context, msgNoFile, Toast.LENGTH_LONG);
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
                 Log.v(TAG, "readMessages() - no JSON file");
             }
@@ -354,16 +361,18 @@ public class RiderMessages {
         final long messageFileModDate = messageFile.lastModified();
         if (sMessageFileLastModified == messageFileModDate) {
             // no need to re-read the file
+            Toast.makeText(context, R.string.messages_havent_changed, Toast.LENGTH_SHORT).show();
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
                 Log.v(TAG, "readMessages() - JSON file hasn't changed");
             }
             return;
         }
 
-        new AsyncTask<Void, Void, Void>() {
+        new AsyncTask<Void, Void, String>() {
 
             @Override
-            protected Void doInBackground(Void... params) {
+            protected String doInBackground(Void... params) {
+                final Resources res = context.getResources();
                 sMessageFileLastModified = messageFileModDate;
                 final InputStream messageStream;
                 try {
@@ -372,14 +381,20 @@ public class RiderMessages {
                     }
                     messageStream = new FileInputStream(messageFile);
                 } catch (FileNotFoundException e) {
+                    final String message = res.getString(R.string.didnt_find_file,
+                            MESSAGE_JSON_FILE);
                     if (Log.isLoggable(TAG, Log.DEBUG)) {
-                        Log.d(TAG, "Didn't find " + MESSAGE_JSON_FILE);
+                        Log.d(TAG, message);
                     }
-                    return null;
+                    return message;
                 }
 
-                parseJsonStream(messageStream);
-                return null;
+                final String result = parseJsonStream(messageStream);
+                return res.getString(R.string.finished_reading_messages, result);
+            }
+
+            protected void onPostExecute(String result) {
+                Toast.makeText(context, result, Toast.LENGTH_LONG).show();
             }
 
         }.execute((Void) null);
@@ -410,7 +425,8 @@ public class RiderMessages {
     }
 
     @VisibleForTesting
-    void parseJsonStream(InputStream jsonStream) {
+    String parseJsonStream(InputStream jsonStream) {
+        final StringBuilder result = new StringBuilder();
         resetMessages();
 
         try {
@@ -424,22 +440,29 @@ public class RiderMessages {
                     case "welcomeMessages":
                         mWelcomeMessages = readJsonArray(reader, WelcomeMessage.class);
                         break;
+
                     case "alreadyWelcomedMessages":
                         mAlreadyWelcomedMessages = readJsonArray(reader, WelcomeMessage.class);
                         break;
+
                     case "returnMessages":
                         mReturnMessages = readJsonArray(reader, ReturnMessage.class);
                         break;
+
                     case "alreadyReturnedMessages":
                         mAlreadyReturnedMessages = readJsonArray(reader,
                                 AlreadyReturnedMessage.class);
                         break;
+
                     case "goMessages":
                         mGoMessages = readJsonArray(reader, GoMessage.class);
                         break;
+
                     default:
+                        final String message = "Unknown top-level key " + name;
+                        result.append(message + "\n");
                         if (Log.isLoggable(TAG, Log.WARN)) {
-                            Log.w(TAG, "Unknown top-level key " + name);
+                            Log.w(TAG, message);
                         }
                         reader.skipValue();
                         break;
@@ -449,8 +472,11 @@ public class RiderMessages {
             reader.endObject();
             reader.close();
         } catch (IOException e) {
+            result.append(e.toString());
             e.printStackTrace();
         }
+
+        return result.toString();
     }
 
     /**
