@@ -121,4 +121,9 @@ limitations under the License.</string>
     </string-array>
 
     <string name="bad_rider_id">This name doesn\'t match the expected format. It should have the name in [square brackets].</string>
+
+    <string name="finished_reading_messages">Finished reading messages\n%s</string>
+    <string name="didnt_find_file">Didn\'t find %s</string>
+    <string name="messages_havent_changed">Message file has not changed.</string>
+    <string name="messages_download_succeeded">Message file downloaded</string>
 </resources>
