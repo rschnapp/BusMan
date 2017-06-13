@@ -471,6 +471,14 @@ public class RiderMessages {
 
             reader.endObject();
             reader.close();
+            final String separator = ", ";
+            result.append("(")
+                    .append(mWelcomeMessages.size()).append(separator)
+                    .append(mAlreadyWelcomedMessages.size()).append(separator)
+                    .append(mReturnMessages.size()).append(separator)
+                    .append(mAlreadyReturnedMessages.size()).append(separator)
+                    .append(mGoMessages.size())
+                    .append(")");
         } catch (IOException e) {
             result.append(e.toString());
             e.printStackTrace();
