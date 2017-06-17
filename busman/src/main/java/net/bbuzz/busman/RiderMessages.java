@@ -42,7 +42,7 @@ public class RiderMessages {
             new File(DATA_DIR, MESSAGE_JSON_FILE_NAME + ".old").getAbsolutePath();
 
     final static int DEFAULT_WEIGHT = 10;
-    // SimpleDateFormat e.g., "Sun, Mar 23, 2014 14:07"
+    // SimpleDateFormat e.g., "Sun, Mar 03, 2014 14:07"
     private final static SimpleDateFormat DATE_FORMAT =
             new SimpleDateFormat("EEE, MMM dd, yyyy HH:mm");
     private static final Random sRandom = new Random();
