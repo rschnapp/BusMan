@@ -680,7 +680,7 @@ public class ManifestActivity extends ListActivity {
     private void welcomeRider(final String rider, int triesLeft) {
         final String message = getWelcomeString(rider);
         try {
-            sayRightNow(String.format(message, firstName(rider)));
+            sayRightNow(formatFirstName("welcome", message, rider));
         } catch (IllegalFormatException | NullPointerException e) {
             if (Log.isLoggable(TAG, Log.ERROR)) {
                 Log.e(TAG, "Bad welcome message: '" + message + "'");
@@ -690,25 +690,37 @@ public class ManifestActivity extends ListActivity {
                 welcomeRider(rider, triesLeft - 1);
             } else {
                 // willing to trust that resource messages won't throw an exception
-                sayRightNow(String.format(getRandomResWelcome(), firstName(rider)));
+                sayRightNow(formatFirstName("welcome alt", getRandomResWelcome(), rider));
             }
         }
+    }
+
+    private String formatFirstName(String where, String message, String rider) {
+        final String firstName = firstName(rider);
+        try {
+            return String.format(message, firstName);
+        } catch (IllegalFormatException e) {
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "bad " + where + " format in '" + message + "': " + e);
+            }
+        }
+        return firstName;
     }
 
     private void returningRider(final String rider, boolean isLast, int triesLeft) {
         final String message = getReturnsString(rider, isLast);
         try {
-            sayRightNow(String.format(message, firstName(rider)));
+            sayRightNow(formatFirstName("returning", message, rider));
         } catch (IllegalFormatException | NullPointerException e) {
             if (Log.isLoggable(TAG, Log.ERROR)) {
-                Log.e(TAG, "Bad return message: '" + message + "'");
+                Log.e(TAG, "Bad return message: '" + message + "': " + e);
             }
             if (triesLeft > 0) {
                 // pull an alternate message
                 returningRider(rider, isLast, triesLeft - 1);
             } else {
                 // willing to trust that resource messages won't throw an exception
-                sayRightNow(String.format(getRandomResReturn(), firstName(rider)));
+                sayRightNow(formatFirstName("returning alt", getRandomResReturn(), rider));
             }
         }
     }
@@ -717,13 +729,13 @@ public class ManifestActivity extends ListActivity {
         final boolean dejaVu = mRemovedRiders.contains(rider);
         final String alreadyReturned = RiderMessages.sInstance.getAlreadyReturnedString(rider,
                 dejaVu);
-        sayRightNow(alreadyReturned != null ? String.format(alreadyReturned, firstName(rider)) :
+        sayRightNow(alreadyReturned != null ? formatFirstName("who", alreadyReturned, rider) :
                 getResources().getString(R.string.already_returned, firstName(rider)));
     }
 
     private void dejaVu(final String rider) {
         final String alreadyWelcomed = RiderMessages.sInstance.getAlreadyWelcomedString(rider);
-        sayRightNow(alreadyWelcomed != null ? String.format(alreadyWelcomed, firstName(rider)) :
+        sayRightNow(alreadyWelcomed != null ? formatFirstName("dejavu", alreadyWelcomed, rider) :
                 getResources().getString(R.string.already_welcomed, firstName(rider)));
     }
 

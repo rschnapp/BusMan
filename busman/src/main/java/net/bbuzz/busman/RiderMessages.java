@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
+import java.util.regex.PatternSyntaxException;
 
 public class RiderMessages {
 
@@ -529,9 +530,16 @@ public class RiderMessages {
         for (final WelcomeMessage message: welcomeMessages) {
             final String idRegexp = message.idRegexp;
             final String timeRegexp = message.timeRegexp;
-            if ((!idRegexp.isEmpty() && !rider.matches(idRegexp))
-                    || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
-                    || (message.message.equals(sLatestWelcomeString))) {
+            try {
+                if ((!idRegexp.isEmpty() && !riderMatchesIdRegexp(rider, idRegexp))
+                        || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
+                        || (message.message.equals(sLatestWelcomeString))) {
+                    continue;
+                }
+            } catch (PatternSyntaxException e) {
+                if (Log.isLoggable(TAG, Log.ERROR)) {
+                    Log.e(TAG, "welcome regexp error: " + e);
+                }
                 continue;
             }
             totalWeight += message.weight;
@@ -598,12 +606,20 @@ public class RiderMessages {
             final String timeRegexp = message.timeRegexp;
             final String messageIsLast = message.isLast;
             final String riderIsLast = isLast ? "t" : "f";
-            if ((!idRegexp.isEmpty() && !rider.matches(idRegexp))
-                    || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
-                    || (!messageIsLast.isEmpty() && !riderIsLast.equals(messageIsLast))
-                    || (message.message.equals(sLatestReturnsString))) {
+            try {
+                if ((!idRegexp.isEmpty() && !riderMatchesIdRegexp(rider, idRegexp))
+                        || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
+                        || (!messageIsLast.isEmpty() && !riderIsLast.equals(messageIsLast))
+                        || (message.message.equals(sLatestReturnsString))) {
+                    continue;
+                }
+            } catch (PatternSyntaxException e) {
+                if (Log.isLoggable(TAG, Log.ERROR)) {
+                    Log.e(TAG, "returns regexp error: " + e);
+                }
                 continue;
             }
+
             totalWeight += message.weight;
             candidates.add(new CandidateMessage(message.message, totalWeight));
         }
@@ -630,18 +646,30 @@ public class RiderMessages {
             final String timeRegexp = message.timeRegexp;
             final String messageIsDejaVu = message.dejaVu;
             final String dejaVu = alreadyRemoved ? "t" : "f";
-            if ((!idRegexp.isEmpty() && !rider.matches(idRegexp))
-                    || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
-                    || (!messageIsDejaVu.isEmpty() && !dejaVu.equals(messageIsDejaVu))
-                    || (message.message.equals(sLatestAlreadyReturnedString))) {
+            try {
+                if ((!idRegexp.isEmpty() && !riderMatchesIdRegexp(rider, idRegexp))
+                        || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
+                        || (!messageIsDejaVu.isEmpty() && !dejaVu.equals(messageIsDejaVu))
+                        || (message.message.equals(sLatestAlreadyReturnedString))) {
+                    continue;
+                }
+            } catch (PatternSyntaxException e) {
+                if (Log.isLoggable(TAG, Log.ERROR)) {
+                    Log.e(TAG, "alreadyReturned regexp error: " + e);
+                }
                 continue;
             }
+
             totalWeight += message.weight;
             candidates.add(new CandidateMessage(message.message, totalWeight));
         }
 
         sLatestAlreadyReturnedString = selectMessage(candidates, totalWeight);
         return sLatestAlreadyReturnedString;
+    }
+
+    private boolean riderMatchesIdRegexp(String rider, String id) {
+        return rider.matches(".*\\[" + id + ".*");
     }
 
     /**
@@ -653,9 +681,17 @@ public class RiderMessages {
         int totalWeight = 0;
         for (final GoMessage message: mGoMessages) {
             final String timeRegexp = message.timeRegexp;
-            if (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp)) {
+            try {
+                if (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp)) {
+                    continue;
+                }
+            } catch (PatternSyntaxException e) {
+                if (Log.isLoggable(TAG, Log.ERROR)) {
+                    Log.e(TAG, "go regexp error: " + e);
+                }
                 continue;
             }
+
             totalWeight += message.weight;
             candidates.add(new CandidateMessage(message.message, totalWeight));
         }
