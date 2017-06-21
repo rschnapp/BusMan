@@ -47,25 +47,12 @@ public class RiderMessages {
             new SimpleDateFormat("EEE, MMM dd, yyyy HH:mm");
     private static final Random sRandom = new Random();
 
-    static abstract class JsonSerializable {
-        public abstract void writeJson(JsonWriter writer) throws IOException;
-
-        public abstract void readJson(JsonReader reader) throws IOException;
-
-        void writeValue(JsonWriter writer, String name, String value, String defaultValue)
-                throws IOException {
-            if (!value.equals(defaultValue)) {
-                writer.name(name).value(value);
-            }
-        }
-
-        void writeValue(JsonWriter writer, String name, int value, int defaultValue)
-                throws IOException {
-            if (value != defaultValue) {
-                writer.name(name).value(value);
-            }
-        }
-    }
+    private static final String FIELD_ID_REGEXP = "idRegexp";
+    private static final String FIELD_TIME_REGEXP = "timeRegexp";
+    private static final String FIELD_MESSAGE = "message";
+    private static final String FIELD_WEIGHT = "weight";
+    private static final String FIELD_IS_LAST = "isLast";
+    private static final String FIELD_DEJA_VU = "dejaVu";
 
     /**
      * Strings to announce the arrival of a rider upon being added to the manifest
@@ -91,10 +78,10 @@ public class RiderMessages {
 
         @Override
         public void writeJson(JsonWriter writer) throws IOException {
-            writeValue(writer, "idRegexp", idRegexp, DEFAULT_ID_REGEXP);
-            writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
-            writeValue(writer, "message", message, DEFAULT_MESSAGE);
-            writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
+            writeValue(writer, FIELD_ID_REGEXP, idRegexp, DEFAULT_ID_REGEXP);
+            writeValue(writer, FIELD_TIME_REGEXP, timeRegexp, DEFAULT_TIME_REGEXP);
+            writeValue(writer, FIELD_MESSAGE, message, DEFAULT_MESSAGE);
+            writeValue(writer, FIELD_WEIGHT, weight, DEFAULT_WEIGHT);
         }
 
         @Override
@@ -103,17 +90,20 @@ public class RiderMessages {
                 String name = reader.nextName();
 
                 switch (name) {
-                    case "idRegexp":
+                    case FIELD_ID_REGEXP:
                         idRegexp = reader.nextString();
                         break;
-                    case "timeRegexp":
+                    case FIELD_TIME_REGEXP:
                         timeRegexp = reader.nextString();
                         break;
-                    case "message":
+                    case FIELD_MESSAGE:
                         message = reader.nextString();
                         break;
-                    case "weight":
+                    case FIELD_WEIGHT:
                         weight = reader.nextInt();
+                        break;
+                    case FIELD_COMMENT:
+                        reader.skipValue();
                         break;
                     default:
                         if (Log.isLoggable(TAG, Log.WARN)) {
@@ -152,11 +142,11 @@ public class RiderMessages {
 
         @Override
         public void writeJson(JsonWriter writer) throws IOException {
-            writeValue(writer, "idRegexp", idRegexp, DEFAULT_ID_REGEXP);
-            writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
-            writeValue(writer, "message", message, DEFAULT_MESSAGE);
-            writeValue(writer, "dejaVu", isLast, DEFAULT_ISLAST);
-            writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
+            writeValue(writer, FIELD_ID_REGEXP, idRegexp, DEFAULT_ID_REGEXP);
+            writeValue(writer, FIELD_TIME_REGEXP, timeRegexp, DEFAULT_TIME_REGEXP);
+            writeValue(writer, FIELD_MESSAGE, message, DEFAULT_MESSAGE);
+            writeValue(writer, FIELD_IS_LAST, isLast, DEFAULT_ISLAST);
+            writeValue(writer, FIELD_WEIGHT, weight, DEFAULT_WEIGHT);
         }
 
         @Override
@@ -165,20 +155,23 @@ public class RiderMessages {
                 String name = reader.nextName();
 
                 switch (name) {
-                    case "idRegexp":
+                    case FIELD_ID_REGEXP:
                         idRegexp = reader.nextString();
                         break;
-                    case "timeRegexp":
+                    case FIELD_TIME_REGEXP:
                         timeRegexp = reader.nextString();
                         break;
-                    case "message":
+                    case FIELD_MESSAGE:
                         message = reader.nextString();
                         break;
-                    case "isLast":
+                    case FIELD_IS_LAST:
                         isLast = reader.nextString();
                         break;
-                    case "weight":
+                    case FIELD_WEIGHT:
                         weight = reader.nextInt();
+                        break;
+                    case FIELD_COMMENT:
+                        reader.skipValue();
                         break;
                     default:
                         if (Log.isLoggable(TAG, Log.WARN)) {
@@ -217,11 +210,11 @@ public class RiderMessages {
 
         @Override
         public void writeJson(JsonWriter writer) throws IOException {
-            writeValue(writer, "idRegexp", idRegexp, DEFAULT_ID_REGEXP);
-            writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
-            writeValue(writer, "message", message, DEFAULT_MESSAGE);
-            writeValue(writer, "dejaVu", dejaVu, DEFAULT_DEJAVU);
-            writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
+            writeValue(writer, FIELD_ID_REGEXP, idRegexp, DEFAULT_ID_REGEXP);
+            writeValue(writer, FIELD_TIME_REGEXP, timeRegexp, DEFAULT_TIME_REGEXP);
+            writeValue(writer, FIELD_MESSAGE, message, DEFAULT_MESSAGE);
+            writeValue(writer, FIELD_DEJA_VU, dejaVu, DEFAULT_DEJAVU);
+            writeValue(writer, FIELD_WEIGHT, weight, DEFAULT_WEIGHT);
         }
 
         @Override
@@ -230,20 +223,23 @@ public class RiderMessages {
                 String name = reader.nextName();
 
                 switch (name) {
-                    case "idRegexp":
+                    case FIELD_ID_REGEXP:
                         idRegexp = reader.nextString();
                         break;
-                    case "timeRegexp":
+                    case FIELD_TIME_REGEXP:
                         timeRegexp = reader.nextString();
                         break;
-                    case "message":
+                    case FIELD_MESSAGE:
                         message = reader.nextString();
                         break;
-                    case "dejaVu":
+                    case FIELD_DEJA_VU:
                         dejaVu = reader.nextString();
                         break;
-                    case "weight":
+                    case FIELD_WEIGHT:
                         weight = reader.nextInt();
+                        break;
+                    case FIELD_COMMENT:
+                        reader.skipValue();
                         break;
                     default:
                         if (Log.isLoggable(TAG, Log.WARN)) {
@@ -276,9 +272,9 @@ public class RiderMessages {
 
         @Override
         public void writeJson(JsonWriter writer) throws IOException {
-            writeValue(writer, "timeRegexp", timeRegexp, DEFAULT_TIME_REGEXP);
-            writeValue(writer, "message", message, DEFAULT_MESSAGE);
-            writeValue(writer, "weight", weight, DEFAULT_WEIGHT);
+            writeValue(writer, FIELD_TIME_REGEXP, timeRegexp, DEFAULT_TIME_REGEXP);
+            writeValue(writer, FIELD_MESSAGE, message, DEFAULT_MESSAGE);
+            writeValue(writer, FIELD_WEIGHT, weight, DEFAULT_WEIGHT);
         }
 
         @Override
@@ -287,14 +283,17 @@ public class RiderMessages {
                 String name = reader.nextName();
 
                 switch (name) {
-                    case "timeRegexp":
+                    case FIELD_TIME_REGEXP:
                         timeRegexp = reader.nextString();
                         break;
-                    case "message":
+                    case FIELD_MESSAGE:
                         message = reader.nextString();
                         break;
-                    case "weight":
+                    case FIELD_WEIGHT:
                         weight = reader.nextInt();
+                        break;
+                    case FIELD_COMMENT:
+                        reader.skipValue();
                         break;
                     default:
                         if (Log.isLoggable(TAG, Log.WARN)) {

@@ -35,6 +35,7 @@ import android.os.Environment;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
+import android.util.JsonReader;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -56,6 +57,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.nio.channels.FileChannel;
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -515,22 +517,29 @@ public class ManifestActivity extends ListActivity {
      * Handle a freshly arrived rider intent (probably from NFC)
      */
     private void maybeRecordNewRider(Intent intent) {
-        if (MimeType.BUSMAN_MIMETYPE.equals(intent.getType())) {
-            final Parcelable[] rawMsgs = intent.getParcelableArrayExtra(
-                    NfcAdapter.EXTRA_NDEF_MESSAGES);
-            final NdefMessage msg = (NdefMessage) rawMsgs[0];
-            final String riderText = new String(msg.getRecords()[0].getPayload());
-            if (TEST_RIDER.equals(riderText)) {
-                if (Log.isLoggable(TAG, Log.DEBUG)) {
-                    Log.d(TAG, "Found Test Rider");
+        try {
+            if (MimeType.BUSMAN_MIMETYPE.equals(intent.getType())) {
+                final Parcelable[] rawMsgs = intent.getParcelableArrayExtra(
+                        NfcAdapter.EXTRA_NDEF_MESSAGES);
+                final NdefMessage msg = (NdefMessage) rawMsgs[0];
+                final String riderText = new String(msg.getRecords()[0].getPayload());
+                if (TEST_RIDER.equals(riderText)) {
+                    if (Log.isLoggable(TAG, Log.DEBUG)) {
+                        Log.d(TAG, "Found Test Rider");
+                    }
+                    for (final String rider : sTestRiders) {
+                        recordNewRiderFromNfc(rider);
+                    }
                 }
-                for (final String rider : sTestRiders) {
-                    recordNewRiderFromNfc(rider);
-                }
+                recordNewRiderFromNfc(riderText);
+            } else if (ACTION_FORWARD.equals(intent.getAction())) {
+                recordNewRiderFromNfc(intent.getStringExtra(EXTRA_KEY_RIDER));
             }
-            recordNewRiderFromNfc(riderText);
-        } else if (ACTION_FORWARD.equals(intent.getAction())) {
-            recordNewRiderFromNfc(intent.getStringExtra(EXTRA_KEY_RIDER));
+        } catch (IOException e) {
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "Bad rider tag: ", e);
+            }
+            Toast.makeText(this, R.string.msg_result_error_bad_rider_id, Toast.LENGTH_LONG);
         }
     }
 
@@ -539,15 +548,27 @@ public class ManifestActivity extends ListActivity {
      *
      * @param nfcRiderText NFC tag payload
      */
-    private void recordNewRiderFromNfc(final String nfcRiderText) {
+    private void recordNewRiderFromNfc(final String nfcRiderText) throws IOException {
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             Log.d(TAG, "recordLatestRider " + (mIsAddingToManifest ? "add " : "drop ") +
                     nfcRiderText);
         }
         mLatestRiderFromNfc = nfcRiderText;
-        final int breakingPoint = nfcRiderText.indexOf(ConfigureTagActivity.ID_SEPARATOR);
-        final String riderName = nfcRiderText.substring(breakingPoint + 1);
-        final String riderId = nfcRiderText.substring(0, breakingPoint);
+        final String riderName;
+        final String riderId;
+        if (!nfcRiderText.matches("\\{.*")) {
+            // Legacy rider id format
+            final int breakingPoint = nfcRiderText.indexOf(ConfigureTagActivity.ID_SEPARATOR);
+            riderName = nfcRiderText.substring(breakingPoint + 1);
+            riderId = nfcRiderText.substring(0, breakingPoint);
+        } else {
+            // Newer JSON id format
+            final ConfigureTagActivity.RiderId riderIdJson = new ConfigureTagActivity.RiderId();
+            final JsonReader reader = new JsonReader(new StringReader(nfcRiderText));
+            riderIdJson.readJson(reader);
+            riderName = riderIdJson.name;
+            riderId = riderIdJson.id;
+        }
         final String rider = riderName + " [" + riderId + "]";
         recordNewRider(mIsAddingToManifest, rider);
     }

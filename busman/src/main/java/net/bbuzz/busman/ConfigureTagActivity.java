@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources.NotFoundException;
+import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -32,6 +33,8 @@ import android.nfc.tech.Ndef;
 import android.nfc.tech.NdefFormatable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.JsonReader;
+import android.util.JsonWriter;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -43,6 +46,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 
 /**
@@ -233,7 +237,14 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
                     Log.d(TAG, "wtib.doInBackground(), tag=" + params[0]);
                 }
                 publishProgress(R.string.msg_writing_new_tag);
-                return writeTag(params[0]);
+                try {
+                    return writeTag(params[0]);
+                } catch (IOException e) {
+                    if (Log.isLoggable(TAG, Log.ERROR)) {
+                        Log.e(TAG, "Bad riderId: ", e);
+                    }
+                    return R.string.msg_result_error_cant_write_tag;
+                }
             }
 
             @Override
@@ -264,7 +275,7 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
      * @param tag - the NFC tag info
      * @return resource id of string that explains the outcome
      */
-    private int writeTag(Tag tag) {
+    private int writeTag(Tag tag) throws IOException {
         final String packageName = getPackageName();
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             Log.d(TAG, "writeTag(), tag=" + tag + ", pkg=" + packageName);
@@ -343,20 +354,25 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
                     return R.string.msg_result_error_not_ndef_tag;
                 }
             }
-        } catch (Exception e) {
+        } catch (RiderIdException e) {
             if (Log.isLoggable(TAG, Log.ERROR)) {
-                Log.e(TAG, "writeTag result: Failed to write tag");
+                Log.e(TAG, "writeTag result: Failed to write tag" + e);
             }
+            return R.string.msg_result_error_bad_rider_id;
+        } catch (FormatException e) {
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "writeTag result: Failed to write tag" + e);
+            }
+            return R.string.msg_result_error_cant_write_tag;
         }
-
-        return R.string.msg_result_error_cant_write_tag;
     }
 
-    // TODO: use JSON instead of ad hoc?
-    private String packIdAndName() {
-        // trim any domain name from the id
-        final String id = mRiderId.replaceFirst(ID_SEPARATOR + ".*", "");
-        return id + ID_SEPARATOR + mRiderName;
+    private String packIdAndName() throws IOException {
+        final RiderId riderId = new RiderId(mRiderId, mRiderName);
+        final StringWriter stringWriter = new StringWriter(256);
+        final JsonWriter jsonWriter = new JsonWriter(stringWriter);
+        riderId.writeJson(jsonWriter);
+        return stringWriter.toString();
     }
 
     private void displayMessage(int stringResourceId) {
@@ -368,5 +384,68 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
             Log.d(TAG, "displayMessage: " + message);
         }
         mResultTextOutput.setText(message);
+    }
+
+    public static class RiderIdException extends IOException {
+        public RiderIdException(String message) {
+            super(message);
+        }
+    }
+
+    public static class RiderId extends JsonSerializable {
+        private static final String FIELD_ID = "id";
+        private static final String FIELD_NAME = "name";
+
+        String id;
+        String name;
+
+        RiderId() {
+        }
+
+        RiderId(String id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        @Override
+        public void writeJson(JsonWriter writer) throws IOException {
+            if (id == null) {
+                throw new RiderIdException("no id");
+            } else if (name == null) {
+                throw new RiderIdException(("no name"));
+            }
+
+            writer.beginObject();
+            writeValue(writer, FIELD_ID, id, null);
+            writeValue(writer, FIELD_NAME, name, null);
+            writer.endObject();
+        }
+
+        @Override
+        public void readJson(JsonReader reader) throws IOException {
+            reader.beginObject();
+            while (reader.hasNext()) {
+                String name = reader.nextName();
+
+                switch (name) {
+                    case FIELD_ID:
+                        this.id = reader.nextString();
+                        break;
+                    case FIELD_NAME:
+                        this.name = reader.nextString();
+                        break;
+                    case FIELD_COMMENT:
+                        reader.skipValue();
+                        break;
+                    default:
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "Unknown rider key: " + name);
+                        }
+                        reader.skipValue();
+                        break;
+                }
+            }
+            reader.endObject();
+        }
     }
 }

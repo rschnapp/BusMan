@@ -34,6 +34,7 @@
     <string name="msg_result_error_cant_format_tag">Failed to format tag. Try again or get another tag.</string>
     <string name="msg_result_error_not_ndef_tag">This tag doesn\'t support NDEF format. Try again with a compatible tag.</string>
     <string name="msg_result_error_cant_write_tag">Unable to write tag. Try again or get a fresh tag.</string>
+    <string name="msg_result_error_bad_rider_id">Malformed rider id. (shouldn\'t happen!)</string>
     <string name="msg_result_cant_make_read_only">This tag cannot be make read-only. Un-check or try a different tag.</string>
 
     <string name="item_settings">Settings</string>

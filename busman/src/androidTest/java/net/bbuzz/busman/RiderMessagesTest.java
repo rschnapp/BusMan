@@ -1,20 +1,18 @@
 package net.bbuzz.busman;
 
-import static org.junit.Assert.assertEquals;
-
-import android.test.suitebuilder.annotation.LargeTest;
 import android.support.test.runner.AndroidJUnit4;
+import android.test.suitebuilder.annotation.SmallTest;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
-import java.net.URL;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(AndroidJUnit4.class)
-@LargeTest
+@SmallTest
 public class RiderMessagesTest {
     //TODO: Add message functionality tests
     private RiderMessages riderMessages;
