@@ -16,8 +16,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="net.bbuzz.busman"
-    android:versionCode="100"
-    android:versionName="1.00" >
+    android:versionCode="101"
+    android:versionName="1.01" >
 
     <uses-sdk
         android:minSdkVersion="14"
