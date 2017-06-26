@@ -16,6 +16,8 @@
 
 package net.bbuzz.busman;
 
+import net.bbuzz.busman.ConfigureTagActivity.RiderInfo;
+
 import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.app.ListActivity;
@@ -554,21 +556,9 @@ public class ManifestActivity extends ListActivity {
                     nfcRiderText);
         }
         mLatestRiderFromNfc = nfcRiderText;
-        final String riderName;
-        final String riderId;
-        if (!nfcRiderText.matches("\\{.*")) {
-            // Legacy rider id format
-            final int breakingPoint = nfcRiderText.indexOf(ConfigureTagActivity.ID_SEPARATOR);
-            riderName = nfcRiderText.substring(breakingPoint + 1);
-            riderId = nfcRiderText.substring(0, breakingPoint);
-        } else {
-            // Newer JSON id format
-            final ConfigureTagActivity.RiderId riderIdJson = new ConfigureTagActivity.RiderId();
-            final JsonReader reader = new JsonReader(new StringReader(nfcRiderText));
-            riderIdJson.readJson(reader);
-            riderName = riderIdJson.name;
-            riderId = riderIdJson.id;
-        }
+        final RiderInfo riderInfo = RiderInfo.getRiderInfo(nfcRiderText);
+        final String riderName = riderInfo.riderName;
+        final String riderId = riderInfo.riderId;
         final String rider = riderName + " [" + riderId + "]";
         recordNewRider(mIsAddingToManifest, rider);
     }

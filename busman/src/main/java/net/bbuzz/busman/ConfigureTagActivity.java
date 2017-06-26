@@ -46,6 +46,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 
@@ -91,9 +92,41 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
         final Intent intent = getIntent();
         final String nfcRiderText = intent.getStringExtra(KEY_NFC_RIDER);
         if (nfcRiderText != null) {
-            final int breakingPoint = nfcRiderText.indexOf('@');
-            mRiderIdInput.setText(nfcRiderText.substring(0, breakingPoint));
-            mRiderNameInput.setText(nfcRiderText.substring(breakingPoint + 1));
+            try {
+                final RiderInfo riderInfo = RiderInfo.getRiderInfo(nfcRiderText);
+                mRiderIdInput.setText(riderInfo.riderId);
+                mRiderNameInput.setText(riderInfo.riderName);
+            } catch (IOException e) {
+                if (Log.isLoggable(TAG, Log.ERROR)) {
+                    Log.e(TAG, "Malformed tag: " + nfcRiderText);
+                }
+            }
+        }
+    }
+
+    public static class RiderInfo {
+        public final String riderId;
+        public final String riderName;
+
+        public RiderInfo(String riderId, String riderName) {
+            this.riderId = riderId;
+            this.riderName = riderName;
+        }
+
+        public static RiderInfo getRiderInfo(String nfcRiderText) throws IOException {
+            if (!nfcRiderText.matches("\\{.*")) {
+                // Legacy rider id format
+                final int breakingPoint = nfcRiderText.indexOf(ConfigureTagActivity.ID_SEPARATOR);
+                return new RiderInfo(nfcRiderText.substring(breakingPoint + 1),
+                        nfcRiderText.substring(0, breakingPoint));
+            } else {
+                // Newer JSON id format
+                final ConfigureTagActivity.RiderId riderIdJson = new ConfigureTagActivity.RiderId();
+                final JsonReader reader = new JsonReader(new StringReader(nfcRiderText));
+                riderIdJson.readJson(reader);
+                return new RiderInfo(riderIdJson.id, riderIdJson.name);
+            }
+
         }
     }
 
