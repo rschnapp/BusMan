@@ -94,39 +94,13 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
         if (nfcRiderText != null) {
             try {
                 final RiderInfo riderInfo = RiderInfo.getRiderInfo(nfcRiderText);
-                mRiderIdInput.setText(riderInfo.riderId);
-                mRiderNameInput.setText(riderInfo.riderName);
+                mRiderIdInput.setText(riderInfo.id);
+                mRiderNameInput.setText(riderInfo.name);
             } catch (IOException e) {
                 if (Log.isLoggable(TAG, Log.ERROR)) {
                     Log.e(TAG, "Malformed tag: " + nfcRiderText);
                 }
             }
-        }
-    }
-
-    public static class RiderInfo {
-        public final String riderId;
-        public final String riderName;
-
-        public RiderInfo(String riderId, String riderName) {
-            this.riderId = riderId;
-            this.riderName = riderName;
-        }
-
-        public static RiderInfo getRiderInfo(String nfcRiderText) throws IOException {
-            if (!nfcRiderText.matches("\\{.*")) {
-                // Legacy rider id format
-                final int breakingPoint = nfcRiderText.indexOf(ConfigureTagActivity.ID_SEPARATOR);
-                return new RiderInfo(nfcRiderText.substring(breakingPoint + 1),
-                        nfcRiderText.substring(0, breakingPoint));
-            } else {
-                // Newer JSON id format
-                final ConfigureTagActivity.RiderId riderIdJson = new ConfigureTagActivity.RiderId();
-                final JsonReader reader = new JsonReader(new StringReader(nfcRiderText));
-                riderIdJson.readJson(reader);
-                return new RiderInfo(riderIdJson.id, riderIdJson.name);
-            }
-
         }
     }
 
@@ -274,7 +248,7 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
                     return writeTag(params[0]);
                 } catch (IOException e) {
                     if (Log.isLoggable(TAG, Log.ERROR)) {
-                        Log.e(TAG, "Bad riderId: ", e);
+                        Log.e(TAG, "Problem writing tag: ", e);
                     }
                     return R.string.msg_result_error_cant_write_tag;
                 }
@@ -401,11 +375,8 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
     }
 
     private String packIdAndName() throws IOException {
-        final RiderId riderId = new RiderId(mRiderId, mRiderName);
-        final StringWriter stringWriter = new StringWriter(256);
-        final JsonWriter jsonWriter = new JsonWriter(stringWriter);
-        riderId.writeJson(jsonWriter);
-        return stringWriter.toString();
+        final RiderInfo riderInfo = new RiderInfo(mRiderId, mRiderName);
+        return riderInfo.getNfcRiderText();
     }
 
     private void displayMessage(int stringResourceId) {
@@ -417,6 +388,39 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
             Log.d(TAG, "displayMessage: " + message);
         }
         mResultTextOutput.setText(message);
+    }
+
+    public static class RiderInfo {
+        public final String id;
+        public final String name;
+
+        public RiderInfo(String riderId, String riderName) {
+            id = riderId;
+            name = riderName;
+        }
+
+        public static RiderInfo getRiderInfo(String nfcRiderText) throws IOException {
+            if (!nfcRiderText.matches("\\{.*")) {
+                // Legacy rider id format
+                final int breakingPoint = nfcRiderText.indexOf(ConfigureTagActivity.ID_SEPARATOR);
+                return new RiderInfo(nfcRiderText.substring(0, breakingPoint),
+                        nfcRiderText.substring(breakingPoint + 1));
+            } else {
+                // Newer JSON id format
+                final RiderId riderIdJson = new RiderId();
+                final JsonReader reader = new JsonReader(new StringReader(nfcRiderText));
+                riderIdJson.readJson(reader);
+                return new RiderInfo(riderIdJson.id, riderIdJson.name);
+            }
+        }
+
+        public String getNfcRiderText() throws IOException {
+            final RiderId riderId = new RiderId(id, name);
+            final StringWriter stringWriter = new StringWriter(256);
+            final JsonWriter jsonWriter = new JsonWriter(stringWriter);
+            riderId.writeJson(jsonWriter);
+            return stringWriter.toString();
+        }
     }
 
     public static class RiderIdException extends IOException {
