@@ -2,11 +2,21 @@
   "welcomeMessages": [
     {
       "timeRegexp": ".*Mar 17.*",
-      "message": "Top of the morning to you, %s!",
+      "message": "Happy Saint Patrick's Day to you, %s!",
       "weight": 25
     },
     {
-      "message": "hi %s"
+      "message": "Hi %s"
+    }
+  ],
+  "alreadyWelcomedMessages": [
+    {
+      "timeRegexp": ".*Mar 17.*",
+      "message": "I already greeted you, %s!",
+      "weight": 25
+    },
+    {
+      "message": "Hello again, %s"
     }
   ],
   "returnMessages": [
@@ -18,6 +28,23 @@
     },
     {
       "message": "heading home %s"
+    }
+  ],
+  "alreadyReturnedMessages": [
+    {
+      "idRegexp": "garth.*",
+      "timeRegexp": ".*Apr 01.*",
+      "message": "Way to stutter, %s! I already welcomed you back, dude!",
+      "dejaVu": "t",
+      "weight": 1000000
+    },
+    {
+      "message": "Whoa! Deja Vu, dude. Take a seat, %s",
+      "dejaVu": "t"
+    },
+    {
+      "message": "Hey, you weren't on the list, %s!",
+      "dejaVu": "f"
     }
   ],
   "goMessages": [

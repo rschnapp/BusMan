@@ -34,6 +34,7 @@
     <string name="msg_result_error_cant_format_tag">Failed to format tag. Try again or get another tag.</string>
     <string name="msg_result_error_not_ndef_tag">This tag doesn\'t support NDEF format. Try again with a compatible tag.</string>
     <string name="msg_result_error_cant_write_tag">Unable to write tag. Try again or get a fresh tag.</string>
+    <string name="msg_result_error_bad_rider_id">Malformed rider id. (shouldn\'t happen!)</string>
     <string name="msg_result_cant_make_read_only">This tag cannot be make read-only. Un-check or try a different tag.</string>
 
     <string name="item_settings">Settings</string>
@@ -99,6 +100,8 @@ limitations under the License.</string>
         <item>Hey, <xliff:g>%s</xliff:g>, nice to see you!</item>
         </string-array>
 
+    <string name="already_welcomed">You are already on the list, <xliff:g>%s</xliff:g></string>
+
     <string-array name="returns">
         <item>welcome back, <xliff:g>%s</xliff:g></item>
         <item>heading home, <xliff:g>%s</xliff:g></item>
@@ -109,14 +112,19 @@ limitations under the License.</string>
         <item>hey, <xliff:g>%s</xliff:g> is back!</item>
         </string-array>
 
-    <string-array name="time_to_go">
+    <string name="already_returned">You are not on the list, <xliff:g>%s</xliff:g></string>
+
+    <string-array name="go">
         <item>Hooray! We\'re all aboard. Time to go!</item>
         <item>It is go, go, go time!</item>
         <item>Everyone is aboard. Let\'s boogie!</item>
         <item>All aboard! It\'s time to head for home!</item>
     </string-array>
 
-    <string name="who_are_you">You are not on the list, <xliff:g>%s</xliff:g></string>
-    <string name="deja_vu">You are already on the list, <xliff:g>%s</xliff:g></string>
     <string name="bad_rider_id">This name doesn\'t match the expected format. It should have the name in [square brackets].</string>
+
+    <string name="finished_reading_messages">Finished reading messages\n%s</string>
+    <string name="didnt_find_file">Didn\'t find %s</string>
+    <string name="messages_havent_changed">Message file has not changed.</string>
+    <string name="messages_download_succeeded">Message file downloaded</string>
 </resources>

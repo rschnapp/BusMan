@@ -40,7 +40,8 @@ public class SettingsActivity extends PreferenceActivity implements
      * as a master/detail two-pane view on tablets. When true, a single pane is
      * shown on tablets.
      */
-    private static final boolean ALWAYS_SIMPLE_PREFS = false;
+    //TODO: Fix the two-pane view and set this back to false!
+    private static final boolean ALWAYS_SIMPLE_PREFS = true;
     private SharedPreferences mSharedPreferences;
 
     @Override
@@ -102,7 +103,8 @@ public class SettingsActivity extends PreferenceActivity implements
     private static boolean isSimplePreferences(Context context) {
         return ALWAYS_SIMPLE_PREFS
                 || Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB
-                || !isXLargeTablet(context);
+                || !isXLargeTablet(context)
+                ;
     }
 
     /**

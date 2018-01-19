@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources.NotFoundException;
+import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -32,6 +33,8 @@ import android.nfc.tech.Ndef;
 import android.nfc.tech.NdefFormatable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.JsonReader;
+import android.util.JsonWriter;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -43,6 +46,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 
 /**
@@ -87,9 +92,15 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
         final Intent intent = getIntent();
         final String nfcRiderText = intent.getStringExtra(KEY_NFC_RIDER);
         if (nfcRiderText != null) {
-            final int breakingPoint = nfcRiderText.indexOf('@');
-            mRiderIdInput.setText(nfcRiderText.substring(0, breakingPoint));
-            mRiderNameInput.setText(nfcRiderText.substring(breakingPoint + 1));
+            try {
+                final RiderInfo riderInfo = RiderInfo.getRiderInfo(nfcRiderText);
+                mRiderIdInput.setText(riderInfo.id);
+                mRiderNameInput.setText(riderInfo.name);
+            } catch (IOException e) {
+                if (Log.isLoggable(TAG, Log.ERROR)) {
+                    Log.e(TAG, "Malformed tag: " + nfcRiderText);
+                }
+            }
         }
     }
 
@@ -140,7 +151,9 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
 
             if (mRiderId != null && !mRiderId.isEmpty()
                     && mRiderName != null && !mRiderName.isEmpty()) {
-                Log.d(TAG, "onClick(), id=" + mRiderId + ", name=" + mRiderName);
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "onClick(), id=" + mRiderId + ", name=" + mRiderName);
+                }
                 displayMessage(R.string.msg_swipe_new_tag);
                 writeNfcWhenItAppears();
             } else {
@@ -150,7 +163,9 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
     }
 
     private void maybeEnableForegroundDispatch() {
-        Log.d(TAG, "maybeEnableForegroundDispatch(), mWaitingToWriteNfc=" + mWaitingToWriteNfc);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "maybeEnableForegroundDispatch(), mWaitingToWriteNfc=" + mWaitingToWriteNfc);
+        }
         if (mWaitingToWriteNfc) {
             // set up a PendingIntent to open the app when a tag is scanned
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
@@ -163,7 +178,10 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
     }
 
     private void maybeDisableForegroundDispatch() {
-        Log.d(TAG, "maybeDisableForegroundDispatch(), mWaitingToWriteNfc=" + mWaitingToWriteNfc);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "maybeDisableForegroundDispatch(), mWaitingToWriteNfc=" +
+                    mWaitingToWriteNfc);
+        }
         if (mWaitingToWriteNfc) {
             mNfcAdapter.disableForegroundDispatch(this);
         }
@@ -172,14 +190,18 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause(), mWaitingToWriteNfc=" + mWaitingToWriteNfc);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "onPause(), mWaitingToWriteNfc=" + mWaitingToWriteNfc);
+        }
         maybeDisableForegroundDispatch();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume(), mWaitingToWriteNfc=" + mWaitingToWriteNfc);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "onResume(), mWaitingToWriteNfc=" + mWaitingToWriteNfc);
+        }
         maybeEnableForegroundDispatch();
     }
 
@@ -188,7 +210,9 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
      */
     @Override
     public void onNewIntent(Intent intent) {
-        Log.d(TAG, "onNewIntent(), mWaitingToWriteNfc=" + mWaitingToWriteNfc);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "onNewIntent(), mWaitingToWriteNfc=" + mWaitingToWriteNfc);
+        }
         // Shouldn't I verify that intent is what I'm expecting?
         if (mWaitingToWriteNfc) {
             mWaitingToWriteNfc = false;
@@ -203,7 +227,9 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
      * Force this Activity to get NFC events first
      */
     private void writeNfcWhenItAppears() {
-        Log.d(TAG, "writeNfcWhenItAppears()");
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "writeNfcWhenItAppears()");
+        }
         mWaitingToWriteNfc = true;
 
         maybeEnableForegroundDispatch();
@@ -214,20 +240,33 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
 
             @Override
             protected Integer doInBackground(Tag... params) {
-                Log.d(TAG, "wtib.doInBackground(), tag=" + params[0]);
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "wtib.doInBackground(), tag=" + params[0]);
+                }
                 publishProgress(R.string.msg_writing_new_tag);
-                return writeTag(params[0]);
+                try {
+                    return writeTag(params[0]);
+                } catch (IOException e) {
+                    if (Log.isLoggable(TAG, Log.ERROR)) {
+                        Log.e(TAG, "Problem writing tag: ", e);
+                    }
+                    return R.string.msg_result_error_cant_write_tag;
+                }
             }
 
             @Override
             protected void onProgressUpdate(Integer... progress) {
-                Log.d(TAG, "wtib.onProgressUpdate(), progress=" + progress[0]);
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "wtib.onProgressUpdate(), progress=" + progress[0]);
+                }
                 displayMessage(progress[0]);
             }
 
             @Override
             protected void onPostExecute(Integer result) {
-                Log.d(TAG, "wtib.onPostExecute(), result=" + result);
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "wtib.onPostExecute(), result=" + result);
+                }
                 if (result == R.string.msg_result_success) {
                     mRiderIdInput.setText("");
                     mRiderNameInput.setText("");
@@ -243,15 +282,19 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
      * @param tag - the NFC tag info
      * @return resource id of string that explains the outcome
      */
-    private int writeTag(Tag tag) {
+    private int writeTag(Tag tag) throws IOException {
         final String packageName = getPackageName();
-        Log.d(TAG, "writeTag(), tag=" + tag + ", pkg=" + packageName);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "writeTag(), tag=" + tag + ", pkg=" + packageName);
+        }
         // record to launch Play Store if app is not installed
         NdefRecord appRecord = NdefRecord.createApplicationRecord(getPackageName());
 
         // package up the id and name; assign our MIME_TYPE
         final String idAndName = packIdAndName();
-        Log.d(TAG, "  writeTag(), idAndName=" + idAndName);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "  writeTag(), idAndName=" + idAndName);
+        }
         byte[] payload = idAndName.getBytes();
         byte[] mimeBytes = MimeType.BUSMAN_MIMETYPE.getBytes(Charset.forName("US-ASCII"));
         NdefRecord cardRecord = new NdefRecord(NdefRecord.TNF_MIME_MEDIA, mimeBytes,
@@ -265,14 +308,18 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
                 ndef.connect();
 
                 if (!ndef.isWritable()) {
-                    Log.e(TAG, "writeTag result: Read-only tag.");
+                    if (Log.isLoggable(TAG, Log.ERROR)) {
+                        Log.e(TAG, "writeTag result: Read-only tag.");
+                    }
                     return R.string.msg_result_error_read_only;
                 }
 
                 // work out how much space we need for the data
                 int size = message.toByteArray().length;
                 if (ndef.getMaxSize() < size) {
-                    Log.e(TAG, "writeTag result: Tag doesn't have enough free space.");
+                    if (Log.isLoggable(TAG, Log.ERROR)) {
+                        Log.e(TAG, "writeTag result: Tag doesn't have enough free space.");
+                    }
                     return R.string.msg_result_error_tag_too_small;
                 }
 
@@ -285,7 +332,9 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
                 if (mMakeReadOnly) {
                     ndef.makeReadOnly();
                 }
-                Log.d(TAG, "writeTag result: Tag written successfully.");
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "writeTag result: Tag written successfully.");
+                }
                 return R.string.msg_result_success;
             } else {
                 // attempt to format tag
@@ -294,30 +343,40 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
                     try {
                         format.connect();
                         format.format(message);
-                        Log.d(TAG, "writeTag result: Tag written successfully!\n"
-                                + "Close this app and scan tag.");
+                        if (Log.isLoggable(TAG, Log.DEBUG)) {
+                            Log.d(TAG, "writeTag result: Tag written successfully!\n"
+                                    + "Close this app and scan tag.");
+                        }
                         return R.string.msg_result_success_formatted;
                     } catch (IOException e) {
-                        Log.e(TAG, "writeTag result: Unable to format tag to NDEF.");
+                        if (Log.isLoggable(TAG, Log.ERROR)) {
+                            Log.e(TAG, "writeTag result: Unable to format tag to NDEF.");
+                        }
                         return R.string.msg_result_error_cant_format_tag;
                     }
                 } else {
-                    Log.e(TAG, "writeTag result: Tag doesn't appear to support NDEF format.");
+                    if (Log.isLoggable(TAG, Log.ERROR)) {
+                        Log.e(TAG, "writeTag result: Tag doesn't appear to support NDEF format.");
+                    }
                     return R.string.msg_result_error_not_ndef_tag;
                 }
             }
-        } catch (Exception e) {
-            Log.e(TAG, "writeTag result: Failed to write tag");
+        } catch (RiderIdException e) {
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "writeTag result: Failed to write tag" + e);
+            }
+            return R.string.msg_result_error_bad_rider_id;
+        } catch (FormatException e) {
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "writeTag result: Failed to write tag" + e);
+            }
+            return R.string.msg_result_error_cant_write_tag;
         }
-
-        return R.string.msg_result_error_cant_write_tag;
     }
 
-    // TODO: use JSON instead of ad hoc?
-    private String packIdAndName() {
-        // trim any domain name from the id
-        final String id = mRiderId.replaceFirst(ID_SEPARATOR + ".*", "");
-        return id + ID_SEPARATOR + mRiderName;
+    private String packIdAndName() throws IOException {
+        final RiderInfo riderInfo = new RiderInfo(mRiderId, mRiderName);
+        return riderInfo.getNfcRiderText();
     }
 
     private void displayMessage(int stringResourceId) {
@@ -325,7 +384,105 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
     }
 
     private void displayMessage(String message) {
-        Log.d(TAG, "displayMessage: " + message);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "displayMessage: " + message);
+        }
         mResultTextOutput.setText(message);
+    }
+
+    public static class RiderInfo {
+        public final String id;
+        public final String name;
+
+        public RiderInfo(String riderId, String riderName) {
+            id = riderId;
+            name = riderName;
+        }
+
+        public static RiderInfo getRiderInfo(String nfcRiderText) throws IOException {
+            if (!nfcRiderText.matches("\\{.*")) {
+                // Legacy rider id format
+                final int breakingPoint = nfcRiderText.indexOf(ConfigureTagActivity.ID_SEPARATOR);
+                return new RiderInfo(nfcRiderText.substring(0, breakingPoint),
+                        nfcRiderText.substring(breakingPoint + 1));
+            } else {
+                // Newer JSON id format
+                final RiderId riderIdJson = new RiderId();
+                final JsonReader reader = new JsonReader(new StringReader(nfcRiderText));
+                riderIdJson.readJson(reader);
+                return new RiderInfo(riderIdJson.id, riderIdJson.name);
+            }
+        }
+
+        public String getNfcRiderText() throws IOException {
+            final RiderId riderId = new RiderId(id, name);
+            final StringWriter stringWriter = new StringWriter(256);
+            final JsonWriter jsonWriter = new JsonWriter(stringWriter);
+            riderId.writeJson(jsonWriter);
+            return stringWriter.toString();
+        }
+    }
+
+    public static class RiderIdException extends IOException {
+        public RiderIdException(String message) {
+            super(message);
+        }
+    }
+
+    public static class RiderId extends JsonSerializable {
+        private static final String FIELD_ID = "id";
+        private static final String FIELD_NAME = "name";
+
+        String id;
+        String name;
+
+        RiderId() {
+        }
+
+        RiderId(String id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        @Override
+        public void writeJson(JsonWriter writer) throws IOException {
+            if (id == null) {
+                throw new RiderIdException("no id");
+            } else if (name == null) {
+                throw new RiderIdException(("no name"));
+            }
+
+            writer.beginObject();
+            writeValue(writer, FIELD_ID, id, null);
+            writeValue(writer, FIELD_NAME, name, null);
+            writer.endObject();
+        }
+
+        @Override
+        public void readJson(JsonReader reader) throws IOException {
+            reader.beginObject();
+            while (reader.hasNext()) {
+                String name = reader.nextName();
+
+                switch (name) {
+                    case FIELD_ID:
+                        this.id = reader.nextString();
+                        break;
+                    case FIELD_NAME:
+                        this.name = reader.nextString();
+                        break;
+                    case FIELD_COMMENT:
+                        reader.skipValue();
+                        break;
+                    default:
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "Unknown rider key: " + name);
+                        }
+                        reader.skipValue();
+                        break;
+                }
+            }
+            reader.endObject();
+        }
     }
 }

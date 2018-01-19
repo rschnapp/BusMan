@@ -16,6 +16,8 @@
 
 package net.bbuzz.busman;
 
+import net.bbuzz.busman.ConfigureTagActivity.RiderInfo;
+
 import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.app.ListActivity;
@@ -63,10 +65,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class ManifestActivity extends ListActivity {
@@ -125,10 +129,9 @@ public class ManifestActivity extends ListActivity {
     private TextView mLatestActionLabel;
     private TextView mLatestRider;
     private TextView mEmptyListView;
-    private Button mAddButton;
-    private Button mDropButton;
     private boolean mIsAddingToManifest;
-    private final Map<String, Ride> mRideManifest = new HashMap<String, Ride>();
+    private final Map<String, Ride> mRideManifest = new HashMap<>();
+    private final Set<String> mRemovedRiders = new HashSet<>();
     private boolean mManifestSortByName = MANIFEST_SORT_DEFAULT;
     private String mLatestRiderFromNfc;
 
@@ -164,7 +167,11 @@ public class ManifestActivity extends ListActivity {
                         cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_FILENAME);
                 final String localFilename = cursor.getString(localFilenameIndex);
                 if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                    Log.i(TAG, "messages download succeeded");
+                    if (Log.isLoggable(TAG, Log.INFO)) {
+                        Log.i(TAG, "messages download succeeded");
+                    }
+                    Toast.makeText(context, R.string.messages_download_succeeded,
+                            Toast.LENGTH_SHORT).show();
                     String oldName = RiderMessages.MESSAGE_JSON_FILE_OLD;
                     String newName = RiderMessages.MESSAGE_JSON_FILE;
 
@@ -178,8 +185,10 @@ public class ManifestActivity extends ListActivity {
                                 new FileInputStream(downloadFile);
                         outStream = new FileOutputStream(new File(newName));
                     } catch (FileNotFoundException e) {
-                        Log.w(TAG, "failed to create files while copying downloaded messages: " +
-                                e);
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "failed to create files while copying " +
+                                    "downloaded messages: " + e);
+                        }
                         return;
                     }
                     FileChannel inChannel = inStream.getChannel();
@@ -189,7 +198,9 @@ public class ManifestActivity extends ListActivity {
                         inStream.close();
                         outStream.close();
                     } catch (IOException e) {
-                        Log.w(TAG, "failed to copy downloaded messages: " + e);
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "failed to copy downloaded messages: " + e);
+                        }
                         return;
                     }
                     downloadFile.delete();
@@ -199,13 +210,15 @@ public class ManifestActivity extends ListActivity {
                     prefs.edit().putLong(SettingsActivity.PREF_MESSAGES_LAST_POLLED,
                             System.currentTimeMillis()).commit();
 
-                    RiderMessages.sInstance.readMessages();
+                    RiderMessages.sInstance.readMessages(context);
                 } else {
-                    if (status == DownloadManager.STATUS_FAILED) {
-                        Log.w(TAG, "messages download failed, error " + reason);
-                    } else {
-                        Log.w(TAG, "messages download failed, status=" + status +
-                                ", reason=" + reason);
+                    if (Log.isLoggable(TAG, Log.WARN)) {
+                        if (status == DownloadManager.STATUS_FAILED) {
+                            Log.w(TAG, "messages download failed, error " + reason);
+                        } else {
+                            Log.w(TAG, "messages download failed, status=" + status +
+                                    ", reason=" + reason);
+                        }
                     }
                 }
             }
@@ -224,8 +237,8 @@ public class ManifestActivity extends ListActivity {
 
         mModeLabel = (TextView) findViewById(R.id.manifest_mode_label);
         mLatestActionLabel = (TextView) findViewById(R.id.manifest_latest_label);
-        mAddButton = (Button) findViewById(R.id.add_to_manifest_button);
-        mDropButton = (Button) findViewById(R.id.drop_from_manifest_button);
+        final Button addButton = (Button) findViewById(R.id.add_to_manifest_button);
+        final Button dropButton = (Button) findViewById(R.id.drop_from_manifest_button);
         mLatestRider = (TextView) findViewById(R.id.manifest_latest_rider);
         mEmptyListView = (TextView) findViewById(android.R.id.empty);
         getListView().setFastScrollEnabled(true);
@@ -237,7 +250,7 @@ public class ManifestActivity extends ListActivity {
         mReturns = getResources().getStringArray(R.array.returns);
 
         mDownloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-        IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+        final IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
         registerReceiver(mDownloadReceiver, filter);
         loadMessages();
 
@@ -247,22 +260,24 @@ public class ManifestActivity extends ListActivity {
             restoreState();
         }
 
-        mAddButton.setOnClickListener(new View.OnClickListener() {
+        addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!mIsAddingToManifest) {
                     mIsAddingToManifest = true;
+                    mRemovedRiders.clear();
                     clearRiderResult();
                     updateList();
                 }
             }
         });
 
-        mDropButton.setOnClickListener(new View.OnClickListener() {
+        dropButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mIsAddingToManifest && !mRideManifest.isEmpty()) {
                     mIsAddingToManifest = false;
+                    mRemovedRiders.clear();
                     clearRiderResult();
                     updateList();
                 }
@@ -301,8 +316,6 @@ public class ManifestActivity extends ListActivity {
 
     /**
      * Unpack saved app state from the bundle
-     *
-     * @param savedInstanceState
      */
     private void restoreFromBundle(Bundle savedInstanceState) {
         mIsAddingToManifest = savedInstanceState.getBoolean(ISKEY_IS_ADDING);
@@ -359,12 +372,12 @@ public class ManifestActivity extends ListActivity {
         }
         final ArrayList<Ride> rideList;
         synchronized(mRideManifest) {
-            rideList = new ArrayList<Ride>(mRideManifest.values());
+            rideList = new ArrayList<>(mRideManifest.values());
         }
         Collections.sort(rideList,
                 mManifestSortByName ? new NameComparator<Ride>() : new BoardingComparator<Ride>());
         final ArrayList<Map<String, String>> rideRows =
-                new ArrayList<Map<String, String>>(mRideManifest.size());
+                new ArrayList<>(mRideManifest.size());
         for (final Ride ride: rideList) {
             rideRows.add(ride.toMap());
         }
@@ -434,6 +447,7 @@ public class ManifestActivity extends ListActivity {
             case R.id.option_clear:
                 if (mRideManifest.isEmpty()) {
                     mIsAddingToManifest = true;
+                    mRemovedRiders.clear();
                     clearRiderResult();
                 } else {
                     new AlertDialog.Builder(this)
@@ -447,6 +461,7 @@ public class ManifestActivity extends ListActivity {
                                             synchronized(mRideManifest) {
                                                 mRideManifest.clear();
                                             }
+                                            mRemovedRiders.clear();
                                             clearRiderResult();
                                             updateList();
                                             saveState();
@@ -500,49 +515,59 @@ public class ManifestActivity extends ListActivity {
 
     /**
      * Handle a freshly arrived rider intent (probably from NFC)
-     * @param intent
      */
     private void maybeRecordNewRider(Intent intent) {
-        if (MimeType.BUSMAN_MIMETYPE.equals(intent.getType())) {
-            Parcelable[] rawMsgs = intent.getParcelableArrayExtra(
-                    NfcAdapter.EXTRA_NDEF_MESSAGES);
-            NdefMessage msg = (NdefMessage) rawMsgs[0];
-            final String riderText = new String(msg.getRecords()[0].getPayload());
-            if (TEST_RIDER.equals(riderText)) {
-                Log.d(TAG, "Found Test Rider");
-                for (final String rider : sTestRiders) {
-                    recordNewRiderFromNfc(rider);
+        try {
+            if (MimeType.BUSMAN_MIMETYPE.equals(intent.getType())) {
+                final Parcelable[] rawMsgs = intent.getParcelableArrayExtra(
+                        NfcAdapter.EXTRA_NDEF_MESSAGES);
+                final NdefMessage msg = (NdefMessage) rawMsgs[0];
+                final String riderText = new String(msg.getRecords()[0].getPayload());
+                if (TEST_RIDER.equals(riderText)) {
+                    if (Log.isLoggable(TAG, Log.DEBUG)) {
+                        Log.d(TAG, "Found Test Rider");
+                    }
+                    for (final String rider : sTestRiders) {
+                        recordNewRiderFromNfc(rider);
+                    }
                 }
+                recordNewRiderFromNfc(riderText);
+            } else if (ACTION_FORWARD.equals(intent.getAction())) {
+                recordNewRiderFromNfc(intent.getStringExtra(EXTRA_KEY_RIDER));
             }
-            recordNewRiderFromNfc(riderText);
-        } else if (ACTION_FORWARD.equals(intent.getAction())) {
-            recordNewRiderFromNfc(intent.getStringExtra(EXTRA_KEY_RIDER));
+        } catch (IOException e) {
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "Bad rider tag: ", e);
+            }
+            Toast.makeText(this, R.string.msg_result_error_bad_rider_id, Toast.LENGTH_LONG);
         }
     }
 
     /**
      * Add or drop an NFC-formatted rider from the manifest
      *
-     * @param nfcRiderText
+     * @param nfcRiderText NFC tag payload
      */
-    private void recordNewRiderFromNfc(final String nfcRiderText) {
-        Log.d(TAG, "recordLatestRider " + (mIsAddingToManifest ? "add " : "drop ") + nfcRiderText);
+    private void recordNewRiderFromNfc(final String nfcRiderText) throws IOException {
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "recordLatestRider " + (mIsAddingToManifest ? "add " : "drop ") +
+                    nfcRiderText);
+        }
         mLatestRiderFromNfc = nfcRiderText;
-        final int breakingPoint = nfcRiderText.indexOf(ConfigureTagActivity.ID_SEPARATOR);
-        final String riderName = nfcRiderText.substring(breakingPoint + 1);
-        final String riderId = nfcRiderText.substring(0, breakingPoint);
-        final String rider = riderName + " [" + riderId + "]";
+        final RiderInfo riderInfo = RiderInfo.getRiderInfo(nfcRiderText);
+        final String rider = riderInfo.name + " [" + riderInfo.id + "]";
         recordNewRider(mIsAddingToManifest, rider);
     }
 
     /**
      * Add or drop a rider formatted as "name (id)"
      *
-     * @param addToManifest
-     * @param rider
+     * @param addToManifest if true, add the rider, else drop them
      */
     private void recordNewRider(boolean addToManifest, String rider) {
-        Log.d(TAG, "recordLatestRider " + (addToManifest ? "add " : "drop ") + rider);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "recordLatestRider " + (addToManifest ? "add " : "drop ") + rider);
+        }
         mLatestRider.setText(rider);
         if (addToManifest) {
             if (mRideManifest.containsKey(rider)) {
@@ -592,8 +617,8 @@ public class ManifestActivity extends ListActivity {
      * @return rider's id, or null if the string is not in the expected format
      */
     private static String id(final String rider) {
-        int openBracePos = rider.indexOf('[');
-        int closeBracePos = rider.indexOf(']');
+        final int openBracePos = rider.indexOf('[');
+        final int closeBracePos = rider.indexOf(']');
 
         if (openBracePos == -1 || closeBracePos <= openBracePos + 1) {
             return null;
@@ -646,7 +671,7 @@ public class ManifestActivity extends ListActivity {
      * @return the param or null if the command wasn't found
      */
     private String extractToken(final Phrase phrase, String command) {
-        String phraseText = phrase.text;
+        final String phraseText = phrase.text;
         String param = null;
         final int startIdx = phraseText.indexOf("!" + command + "(");
         if (startIdx >= 0) {
@@ -662,7 +687,7 @@ public class ManifestActivity extends ListActivity {
     private void welcomeRider(final String rider, int triesLeft) {
         final String message = getWelcomeString(rider);
         try {
-            sayRightNow(String.format(message, firstName(rider)));
+            sayRightNow(formatFirstName("welcome", message, rider));
         } catch (IllegalFormatException | NullPointerException e) {
             if (Log.isLoggable(TAG, Log.ERROR)) {
                 Log.e(TAG, "Bad welcome message: '" + message + "'");
@@ -672,45 +697,63 @@ public class ManifestActivity extends ListActivity {
                 welcomeRider(rider, triesLeft - 1);
             } else {
                 // willing to trust that resource messages won't throw an exception
-                sayRightNow(String.format(getRandomResWelcome(), firstName(rider)));
+                sayRightNow(formatFirstName("welcome alt", getRandomResWelcome(), rider));
             }
         }
+    }
+
+    private String formatFirstName(String where, String message, String rider) {
+        final String firstName = firstName(rider);
+        try {
+            return String.format(message, firstName);
+        } catch (IllegalFormatException e) {
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "bad " + where + " format in '" + message + "': " + e);
+            }
+        }
+        return firstName;
     }
 
     private void returningRider(final String rider, boolean isLast, int triesLeft) {
         final String message = getReturnsString(rider, isLast);
         try {
-            sayRightNow(String.format(message, firstName(rider)));
+            sayRightNow(formatFirstName("returning", message, rider));
         } catch (IllegalFormatException | NullPointerException e) {
             if (Log.isLoggable(TAG, Log.ERROR)) {
-                Log.e(TAG, "Bad return message: '" + message + "'");
+                Log.e(TAG, "Bad return message: '" + message + "': " + e);
             }
             if (triesLeft > 0) {
                 // pull an alternate message
                 returningRider(rider, isLast, triesLeft - 1);
             } else {
                 // willing to trust that resource messages won't throw an exception
-                sayRightNow(String.format(getRandomResReturn(), firstName(rider)));
+                sayRightNow(formatFirstName("returning alt", getRandomResReturn(), rider));
             }
         }
     }
 
     private void whoAreYou(final String rider) {
-        sayRightNow(getResources().getString(R.string.who_are_you, firstName(rider)));
+        final boolean dejaVu = mRemovedRiders.contains(rider);
+        final String alreadyReturned = RiderMessages.sInstance.getAlreadyReturnedString(rider,
+                dejaVu);
+        sayRightNow(alreadyReturned != null ? formatFirstName("who", alreadyReturned, rider) :
+                getResources().getString(R.string.already_returned, firstName(rider)));
     }
 
     private void dejaVu(final String rider) {
-        sayRightNow(getResources().getString(R.string.deja_vu, firstName(rider)));
+        final String alreadyWelcomed = RiderMessages.sInstance.getAlreadyWelcomedString(rider);
+        sayRightNow(alreadyWelcomed != null ? formatFirstName("dejavu", alreadyWelcomed, rider) :
+                getResources().getString(R.string.already_welcomed, firstName(rider)));
     }
 
     private void timeToGo() {
         mTts.playSilence(500, TextToSpeech.QUEUE_ADD, null);
-        String goString = RiderMessages.sInstance.getGoString(RiderMessages.timeString());
+        final String goString = RiderMessages.sInstance.getGoString(RiderMessages.timeString());
         sayQueued(goString != null ? goString : getRandomResGo());
     }
 
     private String getRandomResGo() {
-        final String[] goStrings = getResources().getStringArray(R.array.time_to_go);
+        final String[] goStrings = getResources().getStringArray(R.array.go);
         return goStrings[sRandom.nextInt(goStrings.length)];
     }
 
@@ -719,8 +762,7 @@ public class ManifestActivity extends ListActivity {
         if (riderId == null) {
             return getRandomResWelcome();
         }
-        final String welcomeString = RiderMessages.sInstance.getWelcomeString(id(rider),
-                RiderMessages.timeString());
+        final String welcomeString = RiderMessages.sInstance.getWelcomeString(id(rider));
         return welcomeString != null ? welcomeString : getRandomResWelcome();
     }
 
@@ -733,8 +775,7 @@ public class ManifestActivity extends ListActivity {
         if (riderId == null) {
             return getRandomResReturn();
         }
-        final String returnsString = RiderMessages.sInstance.getReturnsString(id(rider),
-                RiderMessages.timeString(), isLast);
+        final String returnsString = RiderMessages.sInstance.getReturnsString(id(rider), isLast);
         return returnsString != null ? returnsString : getRandomResReturn();
     }
 
@@ -744,10 +785,10 @@ public class ManifestActivity extends ListActivity {
 
     /**
      * Remove rider from the manifest after adjusting the boarding order of all subsequent riders
-     * @param riderToRemove
      */
     private void remove(final String riderToRemove) {
-        final int removedBoardingOrder = mRideManifest.get(riderToRemove).boardingOrder;
+        final Ride removedRide = mRideManifest.get(riderToRemove);
+        final int removedBoardingOrder = removedRide.boardingOrder;
         synchronized(mRideManifest) {
             for (final String rider: mRideManifest.keySet()) {
                 final Ride ride = mRideManifest.get(rider);
@@ -757,14 +798,12 @@ public class ManifestActivity extends ListActivity {
                 }
             }
             mRideManifest.remove(riderToRemove);
+            mRemovedRiders.add(riderToRemove);
         }
     }
 
     /**
      * Set the rider result row label and color
-     *
-     * @param color
-     * @param labelTextId
      */
     private void showRiderResult(final int color, final int labelTextId) {
         mLatestActionLabel.setBackgroundColor(color);
@@ -786,9 +825,9 @@ public class ManifestActivity extends ListActivity {
 
     private void loadMessages() {
         // load the existing messages file, if any
-        RiderMessages.sInstance.readMessages();
+        RiderMessages.sInstance.readMessages(this);
 
-        /**
+        /*
          *  if we have a messages_url
          *  AND if the last time we successfully downloaded the messages file (messages_last_polled)
          *      is more than messages_poll_hours ago
@@ -833,23 +872,23 @@ public class ManifestActivity extends ListActivity {
         }
     }
 
-    public static class Ride {
+    private static class Ride {
         final static String SEPARATOR = "|";
         final static String SEPARATOR_RE = "\\|";
-        public final static String RIDER = "rider";
-        public final static String ORDER = "order";
-        public final static String TIME = "time";
-        public final String rider;
-        public final int boardingOrder;
-        public final long boardingTime;
+        final static String RIDER = "rider";
+        final static String ORDER = "order";
+        final static String TIME = "time";
+        final String rider;
+        final int boardingOrder;
+        final long boardingTime;
 
-        public Ride(String rider, int boardingOrder, long boardingTime) {
+        Ride(String rider, int boardingOrder, long boardingTime) {
             this.rider = rider;
             this.boardingOrder = boardingOrder;
             this.boardingTime = boardingTime;
         }
 
-        public Ride(String packedRide) {
+        Ride(String packedRide) {
             final String[] splitRide = packedRide.split(SEPARATOR_RE);
             rider = splitRide[0];
             boardingOrder = Integer.valueOf(splitRide[1]);
@@ -860,8 +899,8 @@ public class ManifestActivity extends ListActivity {
             return rider + SEPARATOR + boardingOrder + SEPARATOR + boardingTime;
         }
 
-        public Map<String, String> toMap() {
-            final Map<String, String> result = new HashMap<String, String>(3);
+        Map<String, String> toMap() {
+            final Map<String, String> result = new HashMap<>(3);
             result.put(RIDER, rider);
             result.put(ORDER, Integer.toString(boardingOrder));
             final DateFormat timeFormat = DateFormat.getTimeInstance(DateFormat.SHORT,
@@ -879,7 +918,7 @@ public class ManifestActivity extends ListActivity {
      *
      * @param <T>
      */
-    public static class NameComparator<T> implements Comparator<T> {
+    private static class NameComparator<T> implements Comparator<T> {
 
         @Override
         public int compare(Object lhs, Object rhs) {
@@ -906,7 +945,7 @@ public class ManifestActivity extends ListActivity {
      *
      * @param <T>
      */
-    public static class BoardingComparator<T> implements Comparator<T> {
+    private static class BoardingComparator<T> implements Comparator<T> {
 
         @Override
         public int compare(Object lhs, Object rhs) {
@@ -931,8 +970,10 @@ public class ManifestActivity extends ListActivity {
      * Store app state (mode and manifest) in a file
      */
     private void saveState() {
-        Log.d(TAG, "saveState()");
-        Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "saveState()");
+            Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        }
         new AsyncTask<Void, Void, Void>() {
 
             @Override
@@ -950,13 +991,17 @@ public class ManifestActivity extends ListActivity {
                         }
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "saveState create/write failed", e);
+                    if (Log.isLoggable(TAG, Log.ERROR)) {
+                        Log.e(TAG, "saveState create/write failed", e);
+                    }
                 } finally {
                     if (writer != null) {
                         try {
                             writer.close();
                         } catch (IOException e) {
-                            Log.e(TAG, "saveState close failed", e);
+                            if (Log.isLoggable(TAG, Log.ERROR)) {
+                                Log.e(TAG, "saveState close failed", e);
+                            }
                         }
                     }
                 }
@@ -970,8 +1015,10 @@ public class ManifestActivity extends ListActivity {
      * Restore app state (mode and manifest) from a file
      */
     private void restoreState() {
-        Log.d(TAG, "restoreState()");
-        Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "restoreState()");
+            Log.d(TAG, "  isAdding=" + mIsAddingToManifest + ", manifest=" + mRideManifest);
+        }
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(openFileInput(MANIFEST_STATE_FILE)));
@@ -987,13 +1034,17 @@ public class ManifestActivity extends ListActivity {
             }
             invalidateOptionsMenu();
         } catch (Exception e) {
-            Log.e(TAG, "restoreState open/read failed", e);
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "restoreState open/read failed", e);
+            }
         } finally {
             if (reader != null) {
                 try {
                     reader.close();
                 } catch (IOException e) {
-                    Log.e(TAG, "restoreState close failed", e);
+                    if (Log.isLoggable(TAG, Log.ERROR)) {
+                        Log.e(TAG, "restoreState close failed", e);
+                    }
                 }
             }
         }
@@ -1004,7 +1055,7 @@ public class ManifestActivity extends ListActivity {
         @Override
         public void onInit(int status) {
             if (status == TextToSpeech.SUCCESS) {
-                mTtsOptions = new HashMap<String, String>();
+                mTtsOptions = new HashMap<>();
                 final Locale defaultLocale = Locale.getDefault();
                 final int result = mTts.setLanguage(defaultLocale);
                 mTtsIsAvailable = (result != TextToSpeech.LANG_MISSING_DATA) &&
@@ -1021,9 +1072,8 @@ public class ManifestActivity extends ListActivity {
     }
 
     private class Phrase {
-        public String text;
-
-        public Phrase(final String text) {
+        String text;
+        Phrase(final String text) {
             this.text = text;
         }
     }
