@@ -16,38 +16,45 @@
 
 package net.bbuzz.busman;
 
-import net.bbuzz.busman.ConfigureTagActivity.RiderInfo;
-
+import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
-import android.app.ListActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NfcAdapter;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import net.bbuzz.busman.ConfigureTagActivity.RiderInfo;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -73,7 +80,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-public class ManifestActivity extends ListActivity {
+public class ManifestActivity extends AppCompatActivity {
 
     private static final String TAG = "ManifestActivity";
 
@@ -96,6 +103,8 @@ public class ManifestActivity extends ListActivity {
     private static final String ISKEY_SORT_BY_NAME = "sort";
     private static final String ISKEY_MANIFEST = "bus_manifest";
     private static final String MANIFEST_STATE_FILE = "ManifestState.txt";
+
+    private static final int REQUEST_PERMISSIONS = 12731;
 
     private static final String TEST_RIDER = "TestRider@TestRider";
     private static final String[] sTestRiders = new String[] {
@@ -128,6 +137,7 @@ public class ManifestActivity extends ListActivity {
     private TextView mModeLabel;
     private TextView mLatestActionLabel;
     private TextView mLatestRider;
+    private ListView mListView;
     private TextView mEmptyListView;
     private boolean mIsAddingToManifest;
     private final Map<String, Ride> mRideManifest = new HashMap<>();
@@ -240,11 +250,11 @@ public class ManifestActivity extends ListActivity {
         final Button addButton = (Button) findViewById(R.id.add_to_manifest_button);
         final Button dropButton = (Button) findViewById(R.id.drop_from_manifest_button);
         mLatestRider = (TextView) findViewById(R.id.manifest_latest_rider);
-        mEmptyListView = (TextView) findViewById(android.R.id.empty);
-        getListView().setFastScrollEnabled(true);
-        final ListView listView = getListView();
-        listView.setFastScrollAlwaysVisible(true);
-        listView.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
+        mEmptyListView = (TextView) findViewById(R.id.manifest_empty);
+        mListView = (ListView) findViewById(R.id.manifest_list);
+        mListView.setFastScrollEnabled(true);
+        mListView.setFastScrollAlwaysVisible(true);
+        mListView.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
         mIsAddingToManifest = true;
         mWelcomes = getResources().getStringArray(R.array.welcomes);
         mReturns = getResources().getStringArray(R.array.returns);
@@ -381,9 +391,41 @@ public class ManifestActivity extends ListActivity {
         for (final Ride ride: rideList) {
             rideRows.add(ride.toMap());
         }
-        setListAdapter(new SimpleAdapter(this, rideRows,
-                mIsAddingToManifest ? R.layout.rider_row_adding : R.layout.rider_row_dropping,
-                ColumnNames, ColumnFields));
+        if (rideRows.isEmpty()) {
+            mEmptyListView.setVisibility(View.VISIBLE);
+            mListView.setVisibility(View.GONE);
+        } else {
+            final Activity activity = this;
+            mEmptyListView.setVisibility(View.GONE);
+            mListView.setVisibility(View.VISIBLE);
+            mListView.setAdapter(new SimpleAdapter(this, rideRows,
+                    mIsAddingToManifest ? R.layout.rider_row_adding : R.layout.rider_row_dropping,
+                    ColumnNames, ColumnFields));
+            mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int position,
+                                        long id) {
+                    final TextView textView = (TextView) view.findViewById(R.id.ride_name);
+                    final String clickedRider = textView.getText().toString();
+                    final String dialogMessage = activity.getResources()
+                            .getString(R.string.drop_dialog_message, clickedRider);
+                    new AlertDialog.Builder(activity)
+                            .setTitle(R.string.drop_dialog_title)
+                            .setMessage(dialogMessage)
+                            .setPositiveButton(android.R.string.ok,
+                                    new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            recordNewRider(false, clickedRider);
+                                            updateList();
+                                            saveState();
+                                        }
+                                    })
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .show();
+                }
+            });
+        }
     }
 
     @Override
@@ -404,27 +446,6 @@ public class ManifestActivity extends ListActivity {
         menu.findItem(R.id.option_sort).setTitle(
                 mManifestSortByName ? R.string.item_sort_by_boarding : R.string.item_sort_by_name);
         return true;
-    }
-
-    @Override
-    protected void onListItemClick(ListView listView, View view, int position, long id) {
-        final TextView textView = (TextView) view.findViewById(R.id.ride_name);
-        final String clickedRider = textView.getText().toString();
-        final String dialogMessage = this.getResources().getString(R.string.drop_dialog_message,
-                clickedRider);
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.drop_dialog_title)
-                .setMessage(dialogMessage)
-                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        recordNewRider(false, clickedRider);
-                        updateList();
-                        saveState();
-                    }
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
     }
 
     @Override
@@ -823,7 +844,55 @@ public class ManifestActivity extends ListActivity {
         loadMessages();
     }
 
+    String[] perms = {
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.INTERNET};
+
+    private boolean allPermissionsGranted() {
+        for (String perm: perms) {
+            if (ContextCompat.checkSelfPermission(this, perm)
+                    != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void loadMessages() {
+        int MyVersion = Build.VERSION.SDK_INT;
+        if (MyVersion > Build.VERSION_CODES.LOLLIPOP_MR1) {
+            if (allPermissionsGranted()) {
+                reallyLoadMessages();
+            } else {
+                ActivityCompat.requestPermissions(this, perms, REQUEST_PERMISSIONS);
+            }
+        } else {
+            reallyLoadMessages();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_PERMISSIONS:
+                for (int result: grantResults) {
+                    if (result != PackageManager.PERMISSION_GRANTED) {
+                        if (Log.isLoggable(TAG, Log.WARN)) {
+                            Log.w(TAG, "failed to get all permissions");
+                        }
+                        break;
+                    }
+                }
+                reallyLoadMessages();
+                break;
+
+            default:
+                break;
+        }
+    };
+
+    private void reallyLoadMessages() {
         // load the existing messages file, if any
         RiderMessages.sInstance.readMessages(this);
 
