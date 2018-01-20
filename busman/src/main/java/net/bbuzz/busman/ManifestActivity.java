@@ -173,9 +173,14 @@ public class ManifestActivity extends AppCompatActivity {
                 final int status = cursor.getInt(statusIndex);
                 final int reasonIndex = cursor.getColumnIndex(DownloadManager.COLUMN_REASON);
                 final int reason = cursor.getInt(reasonIndex);
-                final int localFilenameIndex =
-                        cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_FILENAME);
-                final String localFilename = cursor.getString(localFilenameIndex);
+                final int localFileUriIndex =
+                        cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);
+                final Uri localFileUri = Uri.parse(cursor.getString(localFileUriIndex));
+//                final int localFilenameIndex =
+//                        cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_FILENAME);
+//                final String localFilename = cursor.getString(localFilenameIndex);
+                // TODO: instead use getContentResolver.openFileDescriptor(localFileUri, "r")
+                final String localFilename = localFileUri.getPath();
                 if (status == DownloadManager.STATUS_SUCCESSFUL) {
                     if (Log.isLoggable(TAG, Log.INFO)) {
                         Log.i(TAG, "messages download succeeded");
@@ -191,8 +196,7 @@ public class ManifestActivity extends AppCompatActivity {
                     FileInputStream inStream;
                     FileOutputStream outStream;
                     try {
-                        inStream =
-                                new FileInputStream(downloadFile);
+                        inStream = new FileInputStream(downloadFile);
                         outStream = new FileOutputStream(new File(newName));
                     } catch (FileNotFoundException e) {
                         if (Log.isLoggable(TAG, Log.WARN)) {
