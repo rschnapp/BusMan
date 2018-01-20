@@ -249,13 +249,13 @@ public class ManifestActivity extends AppCompatActivity {
         mDefaultLocale = Locale.getDefault();
         mLastLocale = mDefaultLocale;
 
-        mModeLabel = (TextView) findViewById(R.id.manifest_mode_label);
-        mLatestActionLabel = (TextView) findViewById(R.id.manifest_latest_label);
-        final Button addButton = (Button) findViewById(R.id.add_to_manifest_button);
-        final Button dropButton = (Button) findViewById(R.id.drop_from_manifest_button);
-        mLatestRider = (TextView) findViewById(R.id.manifest_latest_rider);
-        mEmptyListView = (TextView) findViewById(R.id.manifest_empty);
-        mListView = (ListView) findViewById(R.id.manifest_list);
+        mModeLabel = findViewById(R.id.manifest_mode_label);
+        mLatestActionLabel = findViewById(R.id.manifest_latest_label);
+        final Button addButton = findViewById(R.id.add_to_manifest_button);
+        final Button dropButton = findViewById(R.id.drop_from_manifest_button);
+        mLatestRider = findViewById(R.id.manifest_latest_rider);
+        mEmptyListView = findViewById(R.id.manifest_empty);
+        mListView = findViewById(R.id.manifest_list);
         mListView.setFastScrollEnabled(true);
         mListView.setFastScrollAlwaysVisible(true);
         mListView.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
@@ -409,7 +409,7 @@ public class ManifestActivity extends AppCompatActivity {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int position,
                                         long id) {
-                    final TextView textView = (TextView) view.findViewById(R.id.ride_name);
+                    final TextView textView = view.findViewById(R.id.ride_name);
                     final String clickedRider = textView.getText().toString();
                     final String dialogMessage = activity.getResources()
                             .getString(R.string.drop_dialog_message, clickedRider);
@@ -506,7 +506,7 @@ public class ManifestActivity extends AppCompatActivity {
 
             case R.id.option_add_rider:
                 final View riderView = LayoutInflater.from(this).inflate(R.layout.add_rider, null);
-                final EditText riderNameView = (EditText)riderView.findViewById(R.id.rider_text);
+                final EditText riderNameView = riderView.findViewById(R.id.rider_text);
 
                 new AlertDialog.Builder(this)
                     .setTitle(R.string.item_add_rider)
