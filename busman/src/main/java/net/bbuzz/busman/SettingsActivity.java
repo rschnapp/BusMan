@@ -47,7 +47,8 @@ public class SettingsActivity extends PreferenceActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getActionBar().setDisplayHomeAsUpEnabled(true);
+        // TODO: switch from SettingsActivity to AppCompatActivity and reenable
+        // getActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
 
