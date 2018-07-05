@@ -42,9 +42,9 @@ public class RiderMessages {
             new File(DATA_DIR, MESSAGE_JSON_FILE_NAME + ".old").getAbsolutePath();
 
     final static int DEFAULT_WEIGHT = 10;
-    // SimpleDateFormat e.g., "Sun, Mar 03, 2014 14:07"
+    // SimpleDateFormat e.g., "Sun, Mar 3, 2014 14:07"
     private final static SimpleDateFormat DATE_FORMAT =
-            new SimpleDateFormat("EEE, MMM dd, yyyy HH:mm");
+            new SimpleDateFormat("EEE, MMM d, yyyy HH:mm");
     private static final Random sRandom = new Random();
 
     private static final String FIELD_ID_REGEXP = "idRegexp";
@@ -321,7 +321,7 @@ public class RiderMessages {
      *  timeRegexp is a regular expression to match against a time/date string in the default
      *  locale, of the form
      *          "Sun, Mar 23, 2014 14:07"
-     *          example: ex: ".*Apr 01,.*" matches April first
+     *          example: ex: ".*Apr 1,.*" matches April first
      *          (empty matches all)
      *  idRegexp is a regular expression to match against a rider id, or empty to match all riders
      *  message is the string, which can contain:
@@ -499,8 +499,11 @@ public class RiderMessages {
     }
 
     static String timeString() {
-        final long now = System.currentTimeMillis();
-        return RiderMessages.DATE_FORMAT.format(new Date(now));
+        return timeString(System.currentTimeMillis());
+    }
+
+    static String timeString(long time) {
+        return RiderMessages.DATE_FORMAT.format(new Date(time));
     }
 
     private static class CandidateMessage {
@@ -528,7 +531,7 @@ public class RiderMessages {
         int totalWeight = 0;
         for (final WelcomeMessage message: welcomeMessages) {
             final String idRegexp = message.idRegexp;
-            final String timeRegexp = message.timeRegexp;
+            final String timeRegexp = stripLeadingZeroInTimeRegexp(message.timeRegexp);
             try {
                 if ((!idRegexp.isEmpty() && !riderMatchesIdRegexp(rider, idRegexp))
                         || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
@@ -602,7 +605,7 @@ public class RiderMessages {
         int totalWeight = 0;
         for (final ReturnMessage message: mReturnMessages) {
             final String idRegexp = message.idRegexp;
-            final String timeRegexp = message.timeRegexp;
+            final String timeRegexp = stripLeadingZeroInTimeRegexp(message.timeRegexp);
             final String messageIsLast = message.isLast;
             final String riderIsLast = isLast ? "t" : "f";
             try {
@@ -642,7 +645,7 @@ public class RiderMessages {
         int totalWeight = 0;
         for (final AlreadyReturnedMessage message: mAlreadyReturnedMessages) {
             final String idRegexp = message.idRegexp;
-            final String timeRegexp = message.timeRegexp;
+            final String timeRegexp = stripLeadingZeroInTimeRegexp(message.timeRegexp);
             final String messageIsDejaVu = message.dejaVu;
             final String dejaVu = alreadyRemoved ? "t" : "f";
             try {
@@ -679,7 +682,7 @@ public class RiderMessages {
         final ArrayList<CandidateMessage> candidates = new ArrayList<CandidateMessage>();
         int totalWeight = 0;
         for (final GoMessage message: mGoMessages) {
-            final String timeRegexp = message.timeRegexp;
+            final String timeRegexp = stripLeadingZeroInTimeRegexp(message.timeRegexp);
             try {
                 if (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp)) {
                     continue;
@@ -698,17 +701,9 @@ public class RiderMessages {
         return selectMessage(candidates, totalWeight);
     }
 
-    public static String getMessageFile() {
-        if (!sInitializedDirs) {
-            if (!DATA_DIR.exists()) {
-                DATA_DIR.mkdirs();
-            }
-            if (!DOWNLOAD_DIR.exists()) {
-                DOWNLOAD_DIR.mkdirs();
-            }
-            sInitializedDirs = true;
-        }
-        return MESSAGE_JSON_FILE;
+    @VisibleForTesting
+    static String stripLeadingZeroInTimeRegexp(String timeRegexp) {
+        return timeRegexp.replaceFirst(" 0([0-9])", " $1");
     }
 
     private static String getJsonMessageFile() {

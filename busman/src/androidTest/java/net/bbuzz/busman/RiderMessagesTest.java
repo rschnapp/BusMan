@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 
+import static net.bbuzz.busman.RiderMessages.stripLeadingZeroInTimeRegexp;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(AndroidJUnit4.class)
@@ -67,5 +68,12 @@ public class RiderMessagesTest {
         assertEquals("", goMessage.timeRegexp);
         assertEquals("Hooray! We're all aboard. Time to go!", goMessage.message);
         assertEquals(RiderMessages.DEFAULT_WEIGHT, goMessage.weight);
+    }
+
+    @Test
+    public void testReadStripLeadingZeroInTimeRegexp() throws Exception {
+        assertEquals("Jun 3, 1955", stripLeadingZeroInTimeRegexp("Jun 03, 1955"));
+        assertEquals("Jun 3, 1955", stripLeadingZeroInTimeRegexp("Jun 3, 1955"));
+        assertEquals("Jun 13, 1955", stripLeadingZeroInTimeRegexp("Jun 13, 1955"));
     }
 }
