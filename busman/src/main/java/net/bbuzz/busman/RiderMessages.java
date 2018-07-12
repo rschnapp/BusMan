@@ -519,10 +519,10 @@ public class RiderMessages {
     private static String sLatestWelcomeString;
 
     /**
-     * @param rider - a rider id
+     * @param riderId - a rider id
      * @return a welcome string or null if there were none
      */
-    private String getWelcomeString(final String rider, List<WelcomeMessage> welcomeMessages) {
+    private String getWelcomeString(final String riderId, List<WelcomeMessage> welcomeMessages) {
         if (welcomeMessages == null) {
             return null;
         }
@@ -533,7 +533,7 @@ public class RiderMessages {
             final String idRegexp = message.idRegexp;
             final String timeRegexp = stripLeadingZeroInTimeRegexp(message.timeRegexp);
             try {
-                if ((!idRegexp.isEmpty() && !riderMatchesIdRegexp(rider, idRegexp))
+                if ((!idRegexp.isEmpty() && !riderMatchesIdRegexp(riderId, idRegexp))
                         || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
                         || (message.message.equals(sLatestWelcomeString))) {
                     continue;
@@ -592,11 +592,11 @@ public class RiderMessages {
     private static String sLatestReturnsString;
 
     /**
-     * @param rider - a rider id
+     * @param riderId - a rider id
      * @param isLast - true if this rider's arrival emptied the manifest
      * @return a welcome back string or null if there were none
      */
-    String getReturnsString(final String rider, final boolean isLast) {
+    String getReturnsString(final String riderId, final boolean isLast) {
         if (mReturnMessages == null) {
             return null;
         }
@@ -609,7 +609,7 @@ public class RiderMessages {
             final String messageIsLast = message.isLast;
             final String riderIsLast = isLast ? "t" : "f";
             try {
-                if ((!idRegexp.isEmpty() && !riderMatchesIdRegexp(rider, idRegexp))
+                if ((!idRegexp.isEmpty() && !riderMatchesIdRegexp(riderId, idRegexp))
                         || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
                         || (!messageIsLast.isEmpty() && !riderIsLast.equals(messageIsLast))
                         || (message.message.equals(sLatestReturnsString))) {
@@ -633,10 +633,10 @@ public class RiderMessages {
     private static String sLatestAlreadyReturnedString;
 
     /**
-     * @param rider - a rider id
+     * @param riderId - a rider id
      * @return a welcome back string or null if there were none
      */
-    String getAlreadyReturnedString(final String rider, boolean alreadyRemoved) {
+    String getAlreadyReturnedString(final String riderId, boolean alreadyRemoved) {
         if (mAlreadyReturnedMessages == null) {
             return null;
         }
@@ -649,7 +649,7 @@ public class RiderMessages {
             final String messageIsDejaVu = message.dejaVu;
             final String dejaVu = alreadyRemoved ? "t" : "f";
             try {
-                if ((!idRegexp.isEmpty() && !riderMatchesIdRegexp(rider, idRegexp))
+                if ((!idRegexp.isEmpty() && !riderMatchesIdRegexp(riderId, idRegexp))
                         || (!timeRegexp.isEmpty() && !timeString.matches(timeRegexp))
                         || (!messageIsDejaVu.isEmpty() && !dejaVu.equals(messageIsDejaVu))
                         || (message.message.equals(sLatestAlreadyReturnedString))) {
@@ -670,10 +670,8 @@ public class RiderMessages {
         return sLatestAlreadyReturnedString;
     }
 
-    private boolean riderMatchesIdRegexp(String rider, String id) {
-//        Temporarily removed the safer regex matcher since it breaks the existing ID regexes.
-//        return rider.matches(".*\\[" + id + ".*");
-        return rider.matches(id);
+    private boolean riderMatchesIdRegexp(String riderId, String idRegexp) {
+        return riderId.matches(idRegexp);
     }
 
     /**
