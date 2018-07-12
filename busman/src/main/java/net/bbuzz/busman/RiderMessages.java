@@ -671,7 +671,9 @@ public class RiderMessages {
     }
 
     private boolean riderMatchesIdRegexp(String rider, String id) {
-        return rider.matches(".*\\[" + id + ".*");
+//        Temporarily removed the safer regex matcher since it breaks the existing ID regexes.
+//        return rider.matches(".*\\[" + id + ".*");
+        return rider.matches(id);
     }
 
     /**
