@@ -34,4 +34,14 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="@string/pref_category_nfc">
+
+        <CheckBoxPreference
+            android:key="read_only_enabled"
+            android:title="@string/pref_enable_read_only"
+            android:summary="@string/pref_enable_read_only_summary"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+
 </PreferenceScreen>

@@ -69,7 +69,8 @@
         android:id="@+id/configure_write_only"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/configure_write_only" />
+        android:text="@string/configure_write_only"
+        android:visibility="gone" />
     
     <Button
         android:id="@+id/write_tag_button"

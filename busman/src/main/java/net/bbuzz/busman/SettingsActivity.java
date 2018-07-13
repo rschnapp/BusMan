@@ -34,6 +34,8 @@ public class SettingsActivity extends PreferenceActivity implements
     public static final String PREF_MESSAGES_POLL_HOURS_DEFAULT = "4";
     public static final long MESSAGES_POLL_HOURS_DEFAULT = 4;
     public static final String PREF_MESSAGES_LAST_POLLED = "messages_last_polled";
+    public static final String PREF_ENABLE_READ_ONLY = "read_only_enabled";
+    public static final boolean PREF_ENABLE_READ_ONLY_DEFAULT = false;
     /**
      * Determines whether to always show the simplified settings UI, where
      * settings are presented in a single list. When false, settings are shown

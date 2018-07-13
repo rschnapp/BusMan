@@ -22,6 +22,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources.NotFoundException;
 import android.nfc.FormatException;
@@ -33,6 +34,7 @@ import android.nfc.tech.Ndef;
 import android.nfc.tech.NdefFormatable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.JsonReader;
 import android.util.JsonWriter;
 import android.util.Log;
@@ -102,6 +104,12 @@ public class ConfigureTagActivity extends Activity implements OnClickListener {
                 }
             }
         }
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        final boolean showReadOnly = prefs.getBoolean(SettingsActivity.PREF_ENABLE_READ_ONLY,
+                SettingsActivity.PREF_ENABLE_READ_ONLY_DEFAULT);
+        final CheckBox writeOnlyCheckBox = findViewById(R.id.configure_write_only);
+        writeOnlyCheckBox.setVisibility(showReadOnly ? View.VISIBLE : View.GONE);
+        writeOnlyCheckBox.setChecked(false);
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {

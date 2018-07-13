@@ -15,4 +15,9 @@
     <string name="pref_messages_poll_hours">number of hours to wait before reloading
         messages</string>
     <string name="pref_messages_poll_hours_default">4</string>
+
+    <string name="pref_category_nfc">NFC Tag Settings</string>
+    <string name="pref_enable_read_only">Show "read-only" checkbox</string>
+    <string name="pref_enable_read_only_summary">If checked, enables a "read-only" checkbox for NFC
+        tag initialization.</string>
 </resources>
