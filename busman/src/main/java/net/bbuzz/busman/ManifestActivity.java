@@ -564,7 +564,8 @@ public class ManifestActivity extends AppCompatActivity {
             if (Log.isLoggable(TAG, Log.ERROR)) {
                 Log.e(TAG, "Bad rider tag: ", e);
             }
-            Toast.makeText(this, R.string.msg_result_error_bad_rider_id, Toast.LENGTH_LONG);
+            Toast.makeText(this, R.string.msg_result_error_bad_rider_id, Toast.LENGTH_LONG)
+                    .show();
         }
     }
 
@@ -894,7 +895,7 @@ public class ManifestActivity extends AppCompatActivity {
             default:
                 break;
         }
-    };
+    }
 
     private void reallyLoadMessages() {
         // load the existing messages file, if any
@@ -930,11 +931,20 @@ public class ManifestActivity extends AppCompatActivity {
         }
 
         // Construct a DownloadManager.Request to retrieve the messages file
-        final DownloadManager.Request request = new DownloadManager.Request(Uri.parse(messagesUrl))
-                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
-                        RiderMessages.MESSAGE_JSON_FILE_NAME)
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
-                .setMimeType("text/plain");
+        DownloadManager.Request request = null;
+        try {
+            request = new DownloadManager.Request(Uri.parse(messagesUrl))
+                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
+                            RiderMessages.MESSAGE_JSON_FILE_NAME)
+                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
+                    .setMimeType("text/plain");
+        } catch (IllegalArgumentException e) {
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+            if (Log.isLoggable(TAG, Log.ERROR)) {
+                Log.e(TAG, "Bad message download: " + e.getMessage());
+            }
+            return;
+        }
 
         // TODO: use Uri.getUserInfo() to optionally extract a basic auth user/password and create
         //  and add a suitable authentication header to the request
